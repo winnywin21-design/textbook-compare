@@ -1,0 +1,2716 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>교과서 본문 개정 비교</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif;color:#1a1a1a;}
+body{
+  background:#f4f1ec;
+  min-height:100vh;
+  padding:32px 0 60px;
+  overflow-x:hidden;
+  /* === 3D PERSPECTIVE for page flip === */
+  perspective:2200px;
+}
+
+/* ===== HEADER ===== */
+.page-header{
+  max-width:1280px;
+  margin:0 auto 28px;
+  padding:0 24px;
+  text-align:center;
+}
+.header-eyebrow{
+  display:inline-block;
+  font-size:11pt;
+  font-weight:700;
+  letter-spacing:6px;
+  color:#7B4A2D;
+  margin-bottom:10px;
+  padding:5px 16px;
+  border:1.5px solid #7B4A2D;
+  border-radius:999px;
+}
+.header-title{
+  font-size:30pt;
+  font-weight:900;
+  color:#2a1a10;
+  letter-spacing:-1px;
+  line-height:1.15;
+  margin-bottom:10px;
+}
+.header-subtitle{
+  font-size:11.5pt;
+  color:#6a5a4a;
+  font-weight:500;
+  line-height:1.6;
+}
+
+/* ===== SCREENS (3D flip enabled) ===== */
+.screen{
+  opacity:0;
+  visibility:hidden;
+  display:none;
+  /* 3D flip support */
+  transform-style:preserve-3d;
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
+  transform:rotateY(0deg);
+  transition:opacity 0.4s ease;
+}
+.screen.active{
+  opacity:1;
+  visibility:visible;
+  display:block;
+}
+
+/* Flip-out: BEFORE rotates away (first half of flip) */
+.screen.flipping-out{
+  transition:transform 0.4s cubic-bezier(0.55, 0, 0.7, 0.4), opacity 0.4s ease;
+  transform:rotateY(-90deg);
+}
+/* Flip-in setup: AFTER starts at +90deg (edge-on, invisible) */
+.screen.flipping-in-init{
+  transform:rotateY(90deg);
+  opacity:1;
+}
+/* Flip-in: AFTER rotates to face viewer (second half of flip) */
+.screen.flipping-in{
+  transition:transform 0.4s cubic-bezier(0.3, 0.6, 0.45, 1), opacity 0.3s ease;
+  transform:rotateY(0deg);
+  opacity:1;
+}
+
+/* ===== COMPARE SECTION ===== */
+.compare-section{
+  border-radius:18px;
+  padding:28px 28px 32px;
+  position:relative;
+  margin:0 auto;
+}
+.section-before{
+  max-width:1280px;
+  margin:0 auto;
+  background:linear-gradient(180deg,#e8e3dd 0%,#ddd6cc 100%);
+  border:1.5px solid #c8bfb2;
+  box-shadow:0 4px 18px rgba(0,0,0,0.06);
+}
+.section-after{
+  margin:0 24px;
+  background:linear-gradient(180deg,#e6f1fb 0%,#d5e7f7 100%);
+  border:1.5px solid #aac6e2;
+  box-shadow:0 4px 18px rgba(26,80,160,0.10);
+}
+
+.section-badge{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:8px 18px;
+  border-radius:999px;
+  font-size:12pt;
+  font-weight:900;
+  letter-spacing:1px;
+  margin-bottom:18px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.10);
+}
+.badge-before{background:#6a5a4a;color:#fff;}
+.badge-after{background:#1a50a0;color:#fff;}
+.badge-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:50%;
+  background:rgba(255,255,255,0.25);
+  font-size:11pt;font-weight:900;
+}
+
+/* ===== BEFORE: pages + button in same row ===== */
+.before-content{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:36px;
+  flex-wrap:nowrap;
+}
+
+.pages-row{
+  display:flex;
+  align-items:flex-start;
+  gap:28px;
+}
+.pages-row.before-row{flex-wrap:nowrap;}
+.pages-row.after-row{
+  justify-content:flex-start;
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:8px 4px 18px;
+  scroll-behavior:smooth;
+  scrollbar-width:thin;
+  scrollbar-color:#9bb6d4 transparent;
+}
+.pages-row.after-row::-webkit-scrollbar{height:10px;}
+.pages-row.after-row::-webkit-scrollbar-thumb{background:#9bb6d4;border-radius:5px;}
+.pages-row.after-row::-webkit-scrollbar-track{background:transparent;}
+
+/* ===== PAGE CARD ===== */
+.page-card{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  position:relative;
+  transition:transform 0.25s ease, filter 0.25s ease;
+  flex-shrink:0;
+}
+.page-card:hover{
+  transform:translateY(-6px);
+  filter:drop-shadow(0 12px 22px rgba(0,0,0,0.18));
+}
+
+.page-num-chip{
+  width:30px;height:30px;border-radius:50%;
+  color:#fff;
+  font-size:12pt;font-weight:900;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,0.15);
+  position:absolute;
+  top:-12px;left:-12px;
+  z-index:5;
+  border:2.5px solid #fff;
+}
+.before-chip{background:#7B4A2D;}
+.after-chip{background:#1a50a0;}
+
+.page-frame-wrap{
+  background:#fff;
+  border-radius:6px;
+  box-shadow:0 6px 16px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.08);
+  overflow:hidden;
+  border:1px solid rgba(0,0,0,0.08);
+  transition:box-shadow 0.25s ease;
+  width:412px;
+  height:540px;
+}
+.page-card:hover .page-frame-wrap{
+  box-shadow:0 14px 30px rgba(0,0,0,0.20), 0 2px 6px rgba(0,0,0,0.10);
+}
+.page-frame{
+  border:0;
+  display:block;
+  background:#fff;
+  width:794px;
+  height:1040px;
+  transform:scale(0.52);
+  transform-origin:top left;
+}
+
+/* ===== CTA BUTTON ===== */
+.cta-btn{
+  background:#1a50a0;color:#fff;
+  border:none;
+  padding:14px 30px;
+  border-radius:999px;
+  font-size:12pt;font-weight:700;
+  cursor:pointer;
+  font-family:inherit;
+  box-shadow:0 6px 16px rgba(26,80,160,0.30);
+  transition:transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.cta-btn:hover{
+  background:#0d3d80;
+  transform:translateY(-2px) scale(1.03);
+  box-shadow:0 10px 22px rgba(26,80,160,0.40);
+}
+.cta-btn:active{transform:translateY(0) scale(1);}
+
+/* ===== AFTER SCREEN: BACK BAR ===== */
+.back-bar{
+  max-width:1280px;
+  margin:0 auto 16px;
+  padding:0 24px;
+  display:flex;
+  align-items:center;
+}
+.back-btn{
+  background:#fff;
+  color:#1a50a0;
+  border:1.5px solid #aac6e2;
+  padding:9px 20px;
+  border-radius:999px;
+  font-size:10.5pt;font-weight:700;
+  cursor:pointer;
+  font-family:inherit;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  transition:all 0.2s ease;
+}
+.back-btn:hover{
+  background:#1a50a0;
+  color:#fff;
+  transform:translateX(-3px);
+}
+
+/* ===== SCROLL ARROWS ===== */
+.scroll-arrow{
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  width:48px;height:48px;
+  border-radius:50%;
+  background:rgba(26,80,160,0.92);
+  color:#fff;
+  border:none;
+  font-size:18pt;
+  cursor:pointer;
+  z-index:100;
+  box-shadow:0 6px 18px rgba(0,0,0,0.25);
+  transition:background 0.2s ease, transform 0.2s ease;
+  display:flex;align-items:center;justify-content:center;
+  font-family:inherit;
+}
+.scroll-arrow:hover{
+  background:#1a50a0;
+  transform:translateY(-50%) scale(1.1);
+}
+.scroll-arrow.left{left:18px;}
+.scroll-arrow.right{right:18px;}
+
+.footer-note{
+  max-width:1280px;
+  margin:30px auto 0;
+  padding:0 24px;
+  text-align:center;
+  font-size:9pt;
+  color:#999;
+}
+</style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="page-header">
+    <span class="header-eyebrow">BEFORE &nbsp;·&nbsp; AFTER</span>
+    <p class="header-subtitle">
+      Ⅷ. 자료의 정리와 해석 — 1. 대푯값
+    </p>
+  </header>
+
+  <!-- ===== BEFORE SCREEN ===== -->
+  <main id="screen-before" class="screen active">
+    <section class="compare-section section-before">
+      <div class="section-badge badge-before">
+        <span class="badge-icon">A</span>
+        <span>BEFORE · 수정 전</span>
+      </div>
+      <div class="before-content">
+        <div class="pages-row before-row">
+          <div class="page-card">
+            <div class="page-num-chip before-chip">1</div>
+            <div class="page-frame-wrap">
+              <iframe class="page-frame" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;ko&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;title&gt;원본 1쪽&lt;/title&gt;
+&lt;style&gt;
+body{margin:0;padding:0;background:#e8e3dd;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;style&gt;
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  .page {
+    font-family:'Noto Sans KR',sans-serif;
+    background:#fff;
+    width:210mm;
+    min-height:280mm;
+    padding:12mm 16mm 10mm 18mm;
+    font-size:9.5pt;
+    line-height:1.8;
+    color:#1a1a1a;
+    border:0.5px solid #ccc;
+    margin:0 auto;
+    position:relative;
+  }
+  /* 단원 헤더 */
+  .unit-header {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .unit-num {
+    width:44px;height:44px;
+    background:#7B4A2D;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:22pt;font-weight:900;
+    flex-shrink:0;
+  }
+  .unit-title-block h1 {
+    font-size:18pt;font-weight:900;color:#1a1a1a;line-height:1.1;
+  }
+  .learn-box {
+    border:1.5px solid #7B4A2D;
+    border-radius:4px;
+    padding:5px 12px;
+    font-size:8pt;
+    margin-bottom:11px;
+    display:flex;gap:6px;align-items:flex-start;
+  }
+  .learn-label {
+    background:#7B4A2D;color:#fff;
+    font-size:7.5pt;font-weight:700;
+    padding:2px 6px;border-radius:2px;
+    white-space:nowrap;margin-top:1px;flex-shrink:0;
+  }
+  .learn-items {color:#333;line-height:1.7;}
+  /* 소단원 제목 */
+  .sub-title {
+    font-size:11pt;font-weight:700;
+    color:#1a1a1a;
+    border-bottom:2px solid #7B4A2D;
+    padding-bottom:3px;
+    margin-bottom:9px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .sub-num {
+    width:22px;height:22px;
+    background:#7B4A2D;border-radius:50%;
+    color:#fff;font-size:10pt;font-weight:900;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  /* 본문 */
+  .body-p {
+    font-size:9.5pt;line-height:1.85;
+    margin-bottom:7px;
+    text-indent:1em;
+  }
+  .body-p.no-indent{text-indent:0;}
+  .kw {font-weight:700;color:#1a50a0;}
+  /* 왼쪽 마진 공식 */
+  .formula-row {
+    display:flex;gap:0;
+    margin:5px 0 7px 0;
+    align-items:flex-start;
+  }
+  .formula-margin {
+    width:30mm;
+    font-size:8pt;
+    color:#1a50a0;
+    font-weight:700;
+    padding-right:4px;
+    line-height:1.7;
+    text-align:right;
+    flex-shrink:0;
+  }
+  .formula-main {
+    flex:1;
+    font-size:9.5pt;
+    line-height:1.8;
+  }
+  .formula-box {
+    display:inline-block;
+    border:1px solid #1a50a0;
+    border-radius:3px;
+    padding:2px 12px;
+    font-size:9.5pt;
+    font-weight:700;
+    color:#1a50a0;
+    margin-left:8px;
+  }
+  /* 데이터 표 */
+  .data-table-wrap { margin:6px 0 8px 0; }
+  .data-table {
+    width:100%;
+    border-collapse:collapse;
+    font-size:8pt;
+  }
+  .data-table th {
+    background:#4a3020;
+    color:#fff;
+    padding:4px 5px;
+    text-align:center;
+    font-weight:500;
+    border:0.5px solid #3a2010;
+  }
+  .data-table td {
+    border:0.5px solid #c8b8a0;
+    padding:3px 5px;
+    text-align:center;
+    background:#fdf9f5;
+  }
+  .data-table tr:first-child td { background:#f5ede0; }
+  /* 풀이 예시 박스 */
+  .example-row {
+    display:flex;gap:4px;margin:5px 0 6px 0;align-items:flex-start;
+  }
+  .example-badge {
+    background:#1a50a0;color:#fff;
+    font-size:7.5pt;font-weight:700;
+    padding:2px 7px;border-radius:2px;
+    white-space:nowrap;flex-shrink:0;margin-top:2px;
+  }
+  .example-content {font-size:9pt;line-height:1.8;}
+  /* 문제 박스 */
+  .problem-box {
+    border:1.5px solid #1a50a0;
+    border-radius:5px;
+    overflow:hidden;
+    margin-top:10px;
+  }
+  .problem-header {
+    background:#1a50a0;
+    padding:4px 12px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .problem-label {
+    color:#fff;font-size:8.5pt;font-weight:700;
+  }
+  .problem-num {
+    width:20px;height:20px;
+    background:#fff;
+    border-radius:50%;
+    color:#1a50a0;font-weight:900;font-size:10pt;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .problem-body {
+    padding:7px 12px;
+    font-size:9pt;line-height:1.85;
+    display:flex;gap:10px;
+  }
+  .problem-text { flex:1; }
+  .problem-img-box {
+    width:28mm;
+    height:22mm;
+    border:0.5px dashed #90a4ae;
+    background:#f5f5f5;
+    display:flex;align-items:center;justify-content:center;
+    color:#78909c;font-size:7.5pt;
+    text-align:center;border-radius:3px;
+    flex-shrink:0;
+    line-height:1.4;
+  }
+  .problem-data {
+    border:0.5px solid #b0bec5;
+    border-radius:3px;
+    padding:3px 12px;
+    margin:4px 0;
+    font-weight:500;
+    text-align:center;
+    background:#f8fbff;
+    font-size:9pt;
+  }
+  /* 출처 */
+  .source {font-size:7.5pt;color:#888;text-align:right;margin-top:2px;}
+  /* 페이지 번호 */
+  .page-num {
+    position:absolute;bottom:8mm;right:16mm;
+    font-size:8pt;color:#888;
+  }
+  .page-unit-label {
+    position:absolute;bottom:8mm;left:18mm;
+    font-size:8pt;color:#888;
+  }
+  .divider {border:none;border-top:0.5px solid #ddd;margin:8px 0;}
+&lt;/style&gt;
+
+&lt;div class=&quot;page&quot;&gt;
+  &lt;!-- 단원 헤더 --&gt;
+  &lt;div class=&quot;unit-header&quot;&gt;
+    &lt;div class=&quot;unit-num&quot;&gt;1&lt;/div&gt;
+    &lt;div class=&quot;unit-title-block&quot;&gt;
+      &lt;h1&gt;대푯값&lt;/h1&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- 이 단원을 배우면 --&gt;
+  &lt;div class=&quot;learn-box&quot;&gt;
+    &lt;span class=&quot;learn-label&quot;&gt;이 단원을&lt;br&gt;배우면&lt;/span&gt;
+    &lt;div class=&quot;learn-items&quot;&gt;
+      ☐ &amp;nbsp;중앙값과 최빈값의 뜻을 알고, 이를 구할 수 있다.&lt;br&gt;
+      ☐ &amp;nbsp;자료의 특성에 따라 적절한 대푯값을 선택하여 구할 수 있다.
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- 소단원 제목 --&gt;
+  &lt;div class=&quot;sub-title&quot;&gt;
+    &lt;div class=&quot;sub-num&quot;&gt;❶&lt;/div&gt;
+    대푯값이란 무엇일까?
+  &lt;/div&gt;
+
+  &lt;!-- 본문 시작 --&gt;
+  &lt;p class=&quot;body-p no-indent&quot;&gt;
+    오른쪽 접지에는 어느 날 우리나라 17개 시·도의 미세먼지 농도가 나타나 있다. 위 접지에서 서울 17, 부산 26, 대구 26, …과 같이 조사한 자료에서 각 대상을 수량으로 나타낸 것을 &lt;span class=&quot;kw&quot;&gt;변량&lt;/span&gt;이라고 한다.
+  &lt;/p&gt;
+
+  &lt;!-- 데이터 표 --&gt;
+  &lt;div class=&quot;data-table-wrap&quot;&gt;
+    &lt;table class=&quot;data-table&quot;&gt;
+      &lt;tr&gt;
+        &lt;th&gt;서울&lt;/th&gt;&lt;th&gt;부산&lt;/th&gt;&lt;th&gt;대구&lt;/th&gt;&lt;th&gt;인천&lt;/th&gt;&lt;th&gt;광주&lt;/th&gt;&lt;th&gt;대전&lt;/th&gt;&lt;th&gt;울산&lt;/th&gt;&lt;th&gt;경기&lt;/th&gt;&lt;th&gt;강원&lt;/th&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td&gt;17&lt;/td&gt;&lt;td&gt;26&lt;/td&gt;&lt;td&gt;26&lt;/td&gt;&lt;td&gt;21&lt;/td&gt;&lt;td&gt;15&lt;/td&gt;&lt;td&gt;12&lt;/td&gt;&lt;td&gt;33&lt;/td&gt;&lt;td&gt;18&lt;/td&gt;&lt;td&gt;16&lt;/td&gt;
+      &lt;/tr&gt;
+    &lt;/table&gt;
+    &lt;table class=&quot;data-table&quot; style=&quot;margin-top:1px;&quot;&gt;
+      &lt;tr&gt;
+        &lt;th&gt;충북&lt;/th&gt;&lt;th&gt;충남&lt;/th&gt;&lt;th&gt;전북&lt;/th&gt;&lt;th&gt;전남&lt;/th&gt;&lt;th&gt;세종&lt;/th&gt;&lt;th&gt;경북&lt;/th&gt;&lt;th&gt;경남&lt;/th&gt;&lt;th&gt;제주&lt;/th&gt;&lt;th style=&quot;background:#7a6050;border-color:#3a2010;&quot;&gt;단위:&lt;br&gt;㎍/㎥&lt;/th&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td&gt;16&lt;/td&gt;&lt;td&gt;16&lt;/td&gt;&lt;td&gt;15&lt;/td&gt;&lt;td&gt;16&lt;/td&gt;&lt;td&gt;13&lt;/td&gt;&lt;td&gt;25&lt;/td&gt;&lt;td&gt;26&lt;/td&gt;&lt;td&gt;12&lt;/td&gt;&lt;td style=&quot;background:#f5ede0;color:#888;font-size:7.5pt;&quot;&gt;(출처: 에어코리아)&lt;/td&gt;
+      &lt;/tr&gt;
+    &lt;/table&gt;
+  &lt;/div&gt;
+
+  &lt;p class=&quot;body-p&quot;&gt;
+    이와 같이 자료의 특징이나 경향을 대표적으로 나타내는 값을 그 자료의 &lt;span class=&quot;kw&quot;&gt;대푯값&lt;/span&gt;이라고 한다. 대푯값으로 가장 많이 쓰이는 것은 &lt;span class=&quot;kw&quot;&gt;평균&lt;/span&gt;이다.
+  &lt;/p&gt;
+
+  &lt;!-- 공식 좌측 마진 스타일 --&gt;
+  &lt;div class=&quot;formula-row&quot;&gt;
+    &lt;div class=&quot;formula-margin&quot;&gt;
+      • (평균)=&lt;br&gt;
+      &lt;span style=&quot;font-size:7.5pt;font-weight:400;color:#555;&quot;&gt;(변량의 총합)&lt;br&gt;──────&lt;br&gt;(변량의 개수)&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;formula-main&quot;&gt;
+      위의 미세먼지 자료에서 17개 시·도의 미세먼지 농도의 평균은
+      &lt;div style=&quot;margin:3px 0 3px 0;font-size:9pt;&quot;&gt;
+        &lt;span style=&quot;font-size:8.5pt;color:#444;&quot;&gt;
+          (17+26+26+21+15+12+33+18+16+16+16+15+16+13+25+26+12)÷17
+        &lt;/span&gt;
+      &lt;/div&gt;
+      &lt;span style=&quot;padding-left:6px;font-weight:700;&quot;&gt;= 323 ÷ 17 = &lt;span style=&quot;color:#c0392b;&quot;&gt;19&lt;/span&gt;&amp;nbsp;(㎍/㎥)&lt;/span&gt;
+      &lt;br&gt;이다.
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;p class=&quot;body-p&quot;&gt;
+    이 값은 우리나라 17개 시·도의 미세먼지 농도를 대표하는 값으로 사용할 수 있다.
+  &lt;/p&gt;
+
+  &lt;hr class=&quot;divider&quot;&gt;
+
+  &lt;!-- 문제 1 --&gt;
+  &lt;div class=&quot;problem-box&quot;&gt;
+    &lt;div class=&quot;problem-header&quot;&gt;
+      &lt;div class=&quot;problem-num&quot;&gt;1&lt;/div&gt;
+      &lt;span class=&quot;problem-label&quot;&gt;문&amp;nbsp;&amp;nbsp;제&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;problem-body&quot;&gt;
+      &lt;div class=&quot;problem-text&quot;&gt;
+        다음은 어느 날 측정한 5개 지역의 미세먼지 농도를 조사한 자료이다.
+        &lt;div class=&quot;problem-data&quot;&gt;22&amp;nbsp;&amp;nbsp;&amp;nbsp;18&amp;nbsp;&amp;nbsp;&amp;nbsp;30&amp;nbsp;&amp;nbsp;&amp;nbsp;14&amp;nbsp;&amp;nbsp;&amp;nbsp;16&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;(단위: ㎍/㎥)&lt;/div&gt;
+        &lt;span style=&quot;font-size:8.5pt;color:#555;&quot;&gt;⑴ 이 자료에서 변량의 개수를 말하시오.&lt;/span&gt;&lt;br&gt;
+        &lt;span style=&quot;font-size:8.5pt;color:#555;&quot;&gt;⑵ 이 자료의 평균을 구하시오.&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;problem-img-box&quot;&gt;[삽화: 스마트폰 화면에&lt;br&gt;미세먼지 앱이 표시된&lt;br&gt;일러스트]&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;page-num&quot;&gt;244&lt;/div&gt;
+  &lt;div class=&quot;page-unit-label&quot;&gt;Ⅷ. 자료의 정리와 해석&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;" loading="eager" scrolling="no"></iframe>
+            </div>
+          </div>
+          <div class="page-card">
+            <div class="page-num-chip before-chip">2</div>
+            <div class="page-frame-wrap">
+              <iframe class="page-frame" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;ko&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;title&gt;원본 2쪽&lt;/title&gt;
+&lt;style&gt;
+body{margin:0;padding:0;background:#e8e3dd;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;style&gt;
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+.page{
+  font-family:'Noto Sans KR',sans-serif;
+  background:#fff;
+  width:210mm;
+  height:275mm;
+  padding:20mm;
+  color:#111;
+  margin:0 auto;
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+/* 소단원 제목 */
+.sub-title{
+  font-size:11pt;font-weight:900;color:#111;
+  border-bottom:2.5px solid #7B4A2D;
+  padding-bottom:3px;margin-bottom:9px;
+  display:flex;align-items:center;gap:6px;
+}
+.sub-circle{
+  width:22px;height:22px;background:#7B4A2D;border-radius:50%;
+  color:#fff;font-size:10pt;font-weight:900;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+/* 2단 레이아웃 */
+.content-row{display:flex;gap:0;margin-bottom:6px;align-items:flex-start;}
+.margin-note{
+  width:24mm;flex-shrink:0;padding-right:5px;
+  font-size:7pt;color:#1a50a0;font-weight:700;
+  line-height:1.6;text-align:right;padding-top:1px;
+}
+.main-text{flex:1;font-size:9pt;line-height:1.85;color:#111;}
+.main-text p{margin-bottom:4px;}
+.kw{font-weight:700;color:#111;}
+/* 분수 인라인 */
+.frac{
+  display:inline-flex;flex-direction:column;align-items:center;
+  vertical-align:middle;margin:0 2px;font-size:8.5pt;line-height:1.3;
+}
+.frac .fn{border-bottom:1.5px solid #111;padding:0 3px;text-align:center;}
+.frac .fd{padding:0 3px;text-align:center;}
+/* 보기 박스 */
+.bogi-outer{
+  border:1.5px solid #7B4A2D;border-radius:5px;
+  overflow:hidden;margin:7px 0 7px 0;
+}
+.bogi-header{
+  background:#7B4A2D;color:#fff;
+  font-size:8.5pt;font-weight:700;
+  padding:3px 12px;
+}
+.bogi-body{
+  padding:7px 12px 8px;
+  display:flex;gap:12px;
+}
+.bogi-col{
+  flex:1;font-size:8.5pt;line-height:1.8;
+}
+.bogi-col-title{
+  font-size:7.5pt;font-weight:700;color:#7B4A2D;
+  margin-bottom:4px;
+}
+.bogi-divider{
+  width:0.5px;background:#d4b896;flex-shrink:0;
+}
+/* 보기 내 데이터 행 */
+.eg-row{
+  display:flex;align-items:center;gap:3px;
+  flex-wrap:wrap;margin:3px 0;
+}
+.eg-chip{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:3px;
+  font-size:8pt;font-weight:700;background:#f0ebe4;color:#333;
+  border:0.5px solid #c8b8a0;
+}
+.eg-chip.hi{
+  background:#7B4A2D;color:#fff;
+  border-color:#7B4A2D;
+}
+.eg-chip.hi2{
+  background:#a0623a;color:#fff;
+  border-color:#a0623a;
+}
+.eg-arrow{font-size:9pt;color:#888;margin:0 2px;}
+.eg-result{
+  font-size:8.5pt;font-weight:700;color:#7B4A2D;margin-top:3px;
+}
+.eg-label{font-size:7pt;color:#888;margin:2px 0 1px 0;}
+/* 접지 정렬 표시 영역 */
+.sorted-wrap{
+  margin:4px 0 3px 24mm;
+}
+.sorted-header{font-size:7.5pt;color:#555;margin-bottom:3px;}
+.sorted-row{display:flex;gap:2px;margin-bottom:2px;}
+.sch{
+  display:flex;flex-direction:column;align-items:center;
+  width:calc((100% - 16px)/9);
+}
+.sc{
+  display:flex;flex-direction:column;align-items:center;
+  border-radius:4px;padding:2px 0;width:100%;
+}
+.sc .cv{font-size:8.5pt;font-weight:700;line-height:1.3;}
+.sc-pos{font-size:5.5pt;color:#aaa;line-height:1.2;margin-top:1px;}
+.sc-norm{background:#cce8f8;color:#0d4f8a;}
+.sc-mid{background:#7B4A2D;color:#fff;}
+.sc-warn{background:#ffe0b2;color:#b84800;}
+.sc-bad{background:#ffcdd2;color:#b71c1c;}
+.sc-note{
+  font-size:7pt;color:#7B4A2D;font-weight:700;
+  text-align:center;margin-top:2px;
+}
+/* 계산 인라인 */
+.calc-inline{
+  background:#fafafa;border-left:2.5px solid #7B4A2D;
+  padding:5px 10px;margin:3px 0 4px 0;
+  font-size:8.8pt;line-height:2.0;
+}
+/* 구분선 */
+hr.div{border:none;border-top:0.5px solid #ddd;margin:8px 0;}
+/* 문제 박스 */
+.prob-outer{
+  border:1.5px solid #1a50a0;border-radius:5px;overflow:hidden;
+  margin-top:10mm;margin-bottom:10mm;
+}
+.prob-head{background:#1a50a0;padding:3px 11px;display:flex;align-items:center;gap:6px;}
+.prob-head-circle{
+  width:18px;height:18px;background:#fff;border-radius:50%;
+  color:#1a50a0;font-weight:900;font-size:9pt;
+  display:flex;align-items:center;justify-content:center;
+}
+.prob-head-text{color:#fff;font-size:8pt;font-weight:700;}
+.prob-body{padding:7px 11px 8px;font-size:9pt;line-height:1.85;flex:1;}
+.prob-data{
+  border:0.5px solid #b0c4dd;border-radius:3px;
+  text-align:center;padding:4px 8px;margin:5px 0;
+  background:#f5f9ff;font-weight:700;font-size:9pt;letter-spacing:1px;
+}
+.prob-unit{font-size:6.5pt;font-weight:400;color:#666;margin-left:3px;}
+.prob-img{
+  float:right;margin-left:8px;
+  width:26mm;height:20mm;
+  border:0.5px dashed #bbb;background:#f5f5f5;
+  border-radius:3px;display:flex;align-items:center;
+  justify-content:center;font-size:6pt;color:#aaa;
+  text-align:center;line-height:1.4;
+}
+/* 하단 배지 */
+.pg-center{
+  position:absolute;bottom:7mm;left:0;right:0;
+  display:flex;justify-content:center;align-items:center;
+}
+.pg-badge{
+  width:28px;height:28px;border:1.5px solid #555;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:7.5pt;font-weight:700;color:#333;background:#fff;
+  letter-spacing:-0.3px;
+}
+&lt;/style&gt;
+
+&lt;div class=&quot;page&quot;&gt;
+
+  &lt;!-- 소단원 제목 --&gt;
+  &lt;div class=&quot;sub-title&quot;&gt;
+    &lt;div class=&quot;sub-circle&quot;&gt;❷&lt;/div&gt;
+    중앙값은 무엇일까?
+  &lt;/div&gt;
+
+  &lt;!-- 중앙값 정의 --&gt;
+  &lt;div class=&quot;content-row&quot;&gt;
+    &lt;div class=&quot;margin-note&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;main-text&quot;&gt;
+      &lt;p&gt;평균 이외에도 자료의 대푯값으로 사용할 수 있는 것을 알아보자.&lt;/p&gt;
+      &lt;p&gt;자료의 변량을 작은 값부터 크기순으로 나열할 때 중앙에 위치하는 값을 그 자료의 &lt;span class=&quot;kw&quot;&gt;중앙값&lt;/span&gt;이라고 한다.&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- 구하는 방법 --&gt;
+  &lt;div class=&quot;content-row&quot; style=&quot;margin-bottom:5px;&quot;&gt;
+    &lt;div class=&quot;margin-note&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;main-text&quot;&gt;
+      &lt;p&gt;중앙값을 구할 때는 변량을 작은 값부터 크기순으로 나열하여 변량의 개수가 &lt;span class=&quot;kw&quot;&gt;홀수&lt;/span&gt;이면 중앙에 위치하는 값을 중앙값으로 하고, 변량의 개수가 &lt;span class=&quot;kw&quot;&gt;짝수&lt;/span&gt;이면 중앙에 위치하는 두 값의 평균을 중앙값으로 한다.&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- 보기 박스 --&gt;
+  &lt;div class=&quot;bogi-outer&quot;&gt;
+    &lt;div class=&quot;bogi-header&quot;&gt;보기&lt;/div&gt;
+    &lt;div class=&quot;bogi-body&quot;&gt;
+
+      &lt;!-- 홀수 예 --&gt;
+      &lt;div class=&quot;bogi-col&quot;&gt;
+        &lt;div class=&quot;bogi-col-title&quot;&gt;변량의 개수가 홀수인 경우 (5개)&lt;/div&gt;
+        &lt;div class=&quot;eg-label&quot;&gt;자료&lt;/div&gt;
+        &lt;div class=&quot;eg-row&quot;&gt;
+          &lt;div class=&quot;eg-chip&quot;&gt;4&lt;/div&gt;&lt;div class=&quot;eg-chip&quot;&gt;2&lt;/div&gt;
+          &lt;div class=&quot;eg-chip&quot;&gt;8&lt;/div&gt;&lt;div class=&quot;eg-chip&quot;&gt;1&lt;/div&gt;
+          &lt;div class=&quot;eg-chip&quot;&gt;6&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;eg-label&quot;&gt;작은 값부터 나열&lt;/div&gt;
+        &lt;div class=&quot;eg-row&quot;&gt;
+          &lt;div class=&quot;eg-chip&quot;&gt;1&lt;/div&gt;&lt;div class=&quot;eg-chip&quot;&gt;2&lt;/div&gt;
+          &lt;div class=&quot;eg-chip hi&quot;&gt;4&lt;/div&gt;
+          &lt;div class=&quot;eg-chip&quot;&gt;6&lt;/div&gt;&lt;div class=&quot;eg-chip&quot;&gt;8&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;eg-result&quot;&gt;중앙값: 4&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;bogi-divider&quot;&gt;&lt;/div&gt;
+
+      &lt;!-- 짝수 예 --&gt;
+      &lt;div class=&quot;bogi-col&quot;&gt;
+        &lt;div class=&quot;bogi-col-title&quot;&gt;변량의 개수가 짝수인 경우 (6개)&lt;/div&gt;
+        &lt;div class=&quot;eg-label&quot;&gt;자료&lt;/div&gt;
+        &lt;div class=&quot;eg-row&quot;&gt;
+          &lt;div class=&quot;eg-chip&quot;&gt;3&lt;/div&gt;&lt;div class=&quot;eg-chip&quot;&gt;9&lt;/div&gt;
+          &lt;div class=&quot;eg-chip&quot;&gt;5&lt;/div&gt;&lt;div class=&quot;eg-chip&quot;&gt;7&lt;/div&gt;
+          &lt;div class=&quot;eg-chip&quot;&gt;1&lt;/div&gt;&lt;div class=&quot;eg-chip&quot;&gt;6&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;eg-label&quot;&gt;작은 값부터 나열&lt;/div&gt;
+        &lt;div class=&quot;eg-row&quot;&gt;
+          &lt;div class=&quot;eg-chip&quot;&gt;1&lt;/div&gt;&lt;div class=&quot;eg-chip&quot;&gt;3&lt;/div&gt;
+          &lt;div class=&quot;eg-chip hi&quot;&gt;5&lt;/div&gt;&lt;div class=&quot;eg-chip hi2&quot;&gt;6&lt;/div&gt;
+          &lt;div class=&quot;eg-chip&quot;&gt;7&lt;/div&gt;&lt;div class=&quot;eg-chip&quot;&gt;9&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;eg-result&quot;&gt;중앙값:
+          &lt;span class=&quot;frac&quot; style=&quot;font-size:8pt;&quot;&gt;
+            &lt;span class=&quot;fn&quot;&gt;5+6&lt;/span&gt;
+            &lt;span class=&quot;fd&quot;&gt;2&lt;/span&gt;
+          &lt;/span&gt;
+          = 5.5
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- 접지 자료로 중앙값 구하기 --&gt;
+  &lt;div class=&quot;content-row&quot; style=&quot;margin-bottom:3px;&quot;&gt;
+    &lt;div class=&quot;margin-note&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;main-text&quot;&gt;
+      &lt;p&gt;앞의 접지 자료에서 17개 시·도의 미세먼지 농도를 작은 값부터 순서대로 나열하면 다음과 같다.&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- 정렬된 칩 (순위 표시, 9번째 강조) --&gt;
+  &lt;div class=&quot;sorted-wrap&quot;&gt;
+    &lt;!-- 1~9번째 --&gt;
+    &lt;div class=&quot;sorted-row&quot;&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-norm&quot;&gt;&lt;span class=&quot;cv&quot;&gt;12&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;1&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-norm&quot;&gt;&lt;span class=&quot;cv&quot;&gt;12&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;2&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-norm&quot;&gt;&lt;span class=&quot;cv&quot;&gt;13&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;3&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-norm&quot;&gt;&lt;span class=&quot;cv&quot;&gt;15&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;4&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-norm&quot;&gt;&lt;span class=&quot;cv&quot;&gt;15&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;5&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-norm&quot;&gt;&lt;span class=&quot;cv&quot;&gt;16&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;6&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-norm&quot;&gt;&lt;span class=&quot;cv&quot;&gt;16&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;7&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-norm&quot;&gt;&lt;span class=&quot;cv&quot;&gt;16&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;8&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;
+        &lt;div class=&quot;sc sc-mid&quot;&gt;&lt;span class=&quot;cv&quot;&gt;16&lt;/span&gt;&lt;/div&gt;
+        &lt;span class=&quot;sc-pos&quot; style=&quot;color:#7B4A2D;font-weight:700;&quot;&gt;9&lt;/span&gt;
+        &lt;div class=&quot;sc-note&quot;&gt;▲ 중앙값&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;!-- 10~17번째 --&gt;
+    &lt;div class=&quot;sorted-row&quot;&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-norm&quot;&gt;&lt;span class=&quot;cv&quot;&gt;17&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;10&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-norm&quot;&gt;&lt;span class=&quot;cv&quot;&gt;18&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;11&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-norm&quot;&gt;&lt;span class=&quot;cv&quot;&gt;21&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;12&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-warn&quot;&gt;&lt;span class=&quot;cv&quot;&gt;25&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;13&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-warn&quot;&gt;&lt;span class=&quot;cv&quot;&gt;26&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;14&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-warn&quot;&gt;&lt;span class=&quot;cv&quot;&gt;26&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;15&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-warn&quot;&gt;&lt;span class=&quot;cv&quot;&gt;26&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;16&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;div class=&quot;sc sc-bad&quot;&gt;&lt;span class=&quot;cv&quot;&gt;33&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;sc-pos&quot;&gt;17&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;sch&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;content-row&quot; style=&quot;margin-bottom:0;&quot;&gt;
+    &lt;div class=&quot;margin-note&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;main-text&quot;&gt;
+      &lt;p&gt;변량의 개수가 17개(홀수)이므로 9번째 값이 중앙값이다. 따라서 이 자료의 &lt;span class=&quot;kw&quot;&gt;중앙값은 16 ㎍/㎥&lt;/span&gt;이다.&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;hr class=&quot;div&quot;&gt;
+
+  &lt;!-- 문제 박스 --&gt;
+  &lt;div class=&quot;prob-outer&quot;&gt;
+    &lt;div class=&quot;prob-head&quot;&gt;
+      &lt;div class=&quot;prob-head-circle&quot;&gt;2&lt;/div&gt;
+      &lt;span class=&quot;prob-head-text&quot;&gt;문&amp;nbsp;&amp;nbsp;제&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;prob-body&quot;&gt;
+      &lt;div class=&quot;prob-img&quot;&gt;[삽화 자리]&lt;br&gt;잠자는 학생&lt;br&gt;일러스트&lt;/div&gt;
+      다음은 어느 반 학생 10명의 하루 평균 수면 시간을 조사한 자료이다.
+      &lt;div class=&quot;prob-data&quot;&gt;7&amp;nbsp; 8&amp;nbsp; 6&amp;nbsp; 9&amp;nbsp; 7&amp;nbsp; 8&amp;nbsp; 6&amp;nbsp; 7&amp;nbsp; 8&amp;nbsp; 10&lt;span class=&quot;prob-unit&quot;&gt;(단위: 시간)&lt;/span&gt;&lt;/div&gt;
+      이 자료의 중앙값을 구하시오.
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;pg-center&quot;&gt;
+    &lt;div class=&quot;pg-badge&quot;&gt;본문 2&lt;/div&gt;
+  &lt;/div&gt;
+
+&lt;/div&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;" loading="eager" scrolling="no"></iframe>
+            </div>
+          </div>
+        </div>
+        <button class="cta-btn" onclick="goToAfter()">수정 후 보기 &nbsp;→</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== AFTER SCREEN ===== -->
+  <main id="screen-after" class="screen">
+    <div class="back-bar">
+      <button class="back-btn" onclick="goToBefore()">← BEFORE로 돌아가기</button>
+    </div>
+    <section class="compare-section section-after">
+      <div class="section-badge badge-after">
+        <span class="badge-icon">B</span>
+        <span>AFTER · 수정 후</span>
+      </div>
+      <div class="pages-row after-row" id="after-pages-row">
+          <div class="page-card">
+            <div class="page-num-chip after-chip">1</div>
+            <div class="page-frame-wrap">
+              <iframe class="page-frame" srcdoc="<!DOCTYPE html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;UTF-8&quot;>
+<title>본문1 시안 B</title>
+<style>
+  body{background:#e0dbd5;margin:0;padding:20px;font-family:'Noto Sans KR',sans-serif;min-height:100vh;}
+  .draft-label{display:inline-block;background:#333;color:#fff;font-size:9pt;font-weight:700;padding:4px 14px;border-radius:4px;margin-bottom:14px;}
+  .page-preview{display:flex;justify-content:center;}
+</style>
+</head>
+<body>
+<div class=&quot;draft-label&quot;>시안 B — 번호 뱃지형 칩</div>
+<div class=&quot;page-preview&quot;>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+.page{
+  font-family:'Noto Sans KR',sans-serif;
+  background:#fff;
+  width:210mm;
+  height:275mm;
+  padding:20mm;
+  color:#111;
+  margin:0 auto;
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.unit-header{display:flex;align-items:center;gap:10px;margin-bottom:3px;}
+.unit-num{
+  width:44px;height:44px;background:#7B4A2D;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:22pt;font-weight:900;flex-shrink:0;line-height:1;
+}
+.unit-title{font-size:19pt;font-weight:900;color:#111;}
+.learn-box{
+  border:1.5px solid #7B4A2D;border-radius:3px;
+  padding:5px 11px 5px 9px;
+  margin-top:10px;
+  margin-bottom:calc(3mm + 20px);
+  display:flex;gap:7px;align-items:flex-start;
+}
+.learn-tag{
+  background:#7B4A2D;color:#fff;font-size:7pt;font-weight:700;
+  padding:2px 5px;border-radius:2px;white-space:nowrap;margin-top:1px;flex-shrink:0;
+}
+.learn-list{color:#222;line-height:1.75;font-size:8.2pt;}
+.sub-title{
+  font-size:11pt;font-weight:900;color:#111;
+  border-bottom:2.5px solid #7B4A2D;
+  padding-bottom:3px;margin-bottom:6px;
+  display:flex;align-items:center;gap:6px;
+}
+.sub-circle{
+  width:22px;height:22px;background:#7B4A2D;border-radius:50%;
+  color:#fff;font-size:10pt;font-weight:900;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.content-row{
+  display:flex;gap:0;margin-bottom:3px;align-items:flex-start;
+}
+.margin-note{
+  width:24mm;flex-shrink:0;padding-right:5px;
+  font-size:7pt;color:#1a50a0;font-weight:700;
+  line-height:1.6;text-align:right;padding-top:1px;
+}
+.mn-label{
+  display:inline-block;background:#e8f0fb;color:#1a50a0;
+  border:0.5px solid #9ab4e0;border-radius:2px;
+  font-size:6.5pt;padding:1px 3px;margin-bottom:2px;font-weight:700;
+}
+.frac-margin{
+  display:flex;flex-direction:column;align-items:center;
+  font-size:7pt;color:#1a50a0;margin-top:2px;
+}
+.frac-margin .fn{border-bottom:1px solid #1a50a0;padding:0 2px;}
+.frac-margin .fd{padding:0 2px;}
+.qr-margin{
+  width:24mm;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;
+  gap:2px;padding-right:4px;
+}
+.qr-box{
+  width:18mm;height:18mm;
+  border:1px dashed #bbb;background:#f7f7f7;
+  border-radius:3px;display:flex;align-items:center;justify-content:center;
+}
+.qr-label{font-size:5.5pt;color:#aaa;text-align:center;}
+.main-text{flex:1;font-size:9pt;line-height:1.75;color:#111;}
+.main-text p{margin-bottom:4px;}
+.kw{font-weight:700;color:#111;}
+.frac{
+  display:inline-flex;flex-direction:column;align-items:center;
+  vertical-align:middle;margin:0 2px;font-size:8.5pt;line-height:1.3;
+}
+.frac .fn{border-bottom:1.5px solid #111;padding:0 3px;text-align:center;}
+.frac .fd{padding:0 3px;text-align:center;}
+.chips-block{flex:1;}
+.chips-header{font-size:7.5pt;color:#555;margin-bottom:3px;}
+.chips-unit{font-size:6.5pt;color:#888;}
+.chips-row{display:flex;gap:2px;margin-bottom:3px;}
+.chip{
+  display:inline-flex;flex-direction:column;align-items:center;
+  border-radius:4px;padding:3px 0;
+  width:calc((100% - 16px) / 9);
+}
+.chip .cn{font-size:6.5pt;font-weight:500;line-height:1.4;}
+.chip .cv{font-size:9pt;font-weight:700;line-height:1.3;}
+.cg{background:#cce8f8;color:#0d4f8a;}
+.cn2{background:#d5eddc;color:#1a5c28;}
+.cw{background:#ffe0b2;color:#b84800;}
+.cb{background:#ffcdd2;color:#b71c1c;}
+.chips-source{font-size:6.5pt;color:#999;text-align:right;margin-top:1px;}
+.calc-block{
+  background:#fafafa;border-left:2.5px solid #7B4A2D;
+  padding:5px 10px;margin:13px 0 14px 0;
+  font-size:8.8pt;line-height:1.85;
+}
+.calc-line{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.prob-outer{
+  border:1.5px solid #1a50a0;border-radius:5px;overflow:hidden;
+  margin-top:8px;
+  margin-bottom:31px;
+}
+.prob-head{background:#1a50a0;padding:3px 11px;display:flex;align-items:center;gap:6px;}
+.prob-head-circle{
+  width:18px;height:18px;background:#fff;border-radius:50%;
+  color:#1a50a0;font-weight:900;font-size:9pt;
+  display:flex;align-items:center;justify-content:center;
+}
+.prob-head-text{color:#fff;font-size:8pt;font-weight:700;}
+.prob-body{padding:7px 11px 8px;font-size:9pt;line-height:1.85;}
+.prob-data{
+  border:0.5px solid #b0c4dd;border-radius:3px;
+  text-align:center;padding:4px 8px;margin:5px 0;
+  background:#f5f9ff;font-weight:700;font-size:9pt;letter-spacing:1.5px;
+}
+.prob-unit{font-size:6.5pt;font-weight:400;color:#666;margin-left:3px;}
+.prob-img{
+  float:right;margin-left:8px;margin-bottom:4px;
+  width:26mm;height:20mm;
+  border:0.5px dashed #bbb;background:#f5f5f5;
+  border-radius:3px;display:flex;align-items:center;
+  justify-content:center;font-size:6pt;color:#aaa;
+  text-align:center;line-height:1.4;
+}
+.body-add{
+  font-size:9pt;line-height:1.65;color:#111;
+  padding-left:24mm;
+}
+.body-add p{margin-bottom:4px;}
+.body-add p:last-child{margin-bottom:7mm;}
+.pg-center{
+  position:absolute;
+  bottom:7mm;
+  left:0;right:0;
+  display:flex;justify-content:center;align-items:center;
+}
+.pg-badge{
+  width:28px;height:28px;
+  border:1.5px solid #555;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:7.5pt;font-weight:700;color:#333;
+  background:#fff;
+  letter-spacing:-0.3px;
+}
+</style>
+
+<div class=&quot;page&quot;>
+
+  <div class=&quot;unit-header&quot;>
+    <div class=&quot;unit-num&quot;>1</div>
+    <div class=&quot;unit-title&quot;>대푯값</div>
+    <!-- 말풍선 — 단원 제목 옆 -->
+    <div style=&quot;position:relative;display:inline-flex;align-items:center;margin-left:8px;&quot;>
+      <div style=&quot;position:absolute;left:-7px;top:50%;transform:translateY(-50%);border-top:5px solid transparent;border-bottom:5px solid transparent;border-right:7px solid #d4b896;&quot;></div>
+      <div style=&quot;position:absolute;left:-5px;top:50%;transform:translateY(-50%);border-top:4px solid transparent;border-bottom:4px solid transparent;border-right:6px solid #fdf8f3;z-index:1;&quot;></div>
+      <div style=&quot;background:#fdf8f3;border:1.5px solid #d4b896;border-radius:5px;padding:5px 11px;font-size:8.3pt;line-height:1.6;color:#5a3010;white-space:nowrap;&quot;>
+        대푯값의 세계로 여행 출발!
+      </div>
+    </div>
+  </div>
+  <!-- 소단원 제목 행 — 왼쪽 마진에 스탬프 -->
+  <div class=&quot;learn-box&quot;>
+    <span class=&quot;learn-tag&quot;>이 단원을<br>배우면</span>
+    <div class=&quot;learn-list&quot;>
+      ☐&amp;nbsp; 중앙값과 최빈값의 뜻을 알고, 이를 구할 수 있다.<br>
+      ☐&amp;nbsp; 자료의 특성에 따라 적절한 대푯값을 선택하여 구할 수 있다.
+    </div>
+  </div>
+
+  <div style=&quot;display:flex;gap:0;align-items:flex-start;margin-bottom:4px;&quot;>
+    <div style=&quot;width:24mm;flex-shrink:0;display:flex;justify-content:center;padding-right:4px;padding-top:1px;&quot;>
+      <div style=&quot;border:1.5px solid #7B4A2D;border-radius:5px;padding:4px 5px;text-align:center;background:#fdf8f3;&quot;>
+        <div style=&quot;font-size:13pt;line-height:1.2;&quot;>🗺️</div>
+        <div style=&quot;font-size:5.8pt;font-weight:700;color:#7B4A2D;line-height:1.4;margin-top:2px;&quot;>첫 번째<br>정거장</div>
+      </div>
+    </div>
+    <div class=&quot;sub-title&quot; style=&quot;flex:1;margin-bottom:0;&quot;>
+      <div class=&quot;sub-circle&quot;>❶</div>
+      대푯값이란 무엇일까?
+    </div>
+  </div>
+
+  <div class=&quot;content-row&quot;>
+    <div class=&quot;margin-note&quot;></div>
+    <div class=&quot;main-text&quot;>
+      <p>오른쪽 접지에는 어느 날 우리나라 17개 시·도의 미세먼지 농도가 나타나 있다.</p>
+    </div>
+  </div>
+
+  <div class=&quot;content-row&quot; style=&quot;margin-bottom:4px;&quot;>
+    <div class=&quot;qr-margin&quot;>
+      <div class=&quot;qr-box&quot;>
+        <svg width=&quot;32&quot; height=&quot;32&quot; viewBox=&quot;0 0 38 38&quot; fill=&quot;none&quot;>
+          <rect x=&quot;2&quot; y=&quot;2&quot; width=&quot;14&quot; height=&quot;14&quot; rx=&quot;1.5&quot; fill=&quot;none&quot; stroke=&quot;#aaa&quot; stroke-width=&quot;1.5&quot;/>
+          <rect x=&quot;5&quot; y=&quot;5&quot; width=&quot;8&quot; height=&quot;8&quot; rx=&quot;0.5&quot; fill=&quot;#aaa&quot;/>
+          <rect x=&quot;22&quot; y=&quot;2&quot; width=&quot;14&quot; height=&quot;14&quot; rx=&quot;1.5&quot; fill=&quot;none&quot; stroke=&quot;#aaa&quot; stroke-width=&quot;1.5&quot;/>
+          <rect x=&quot;25&quot; y=&quot;5&quot; width=&quot;8&quot; height=&quot;8&quot; rx=&quot;0.5&quot; fill=&quot;#aaa&quot;/>
+          <rect x=&quot;2&quot; y=&quot;22&quot; width=&quot;14&quot; height=&quot;14&quot; rx=&quot;1.5&quot; fill=&quot;none&quot; stroke=&quot;#aaa&quot; stroke-width=&quot;1.5&quot;/>
+          <rect x=&quot;5&quot; y=&quot;25&quot; width=&quot;8&quot; height=&quot;8&quot; rx=&quot;0.5&quot; fill=&quot;#aaa&quot;/>
+          <rect x=&quot;22&quot; y=&quot;22&quot; width=&quot;3&quot; height=&quot;3&quot; fill=&quot;#aaa&quot;/>
+          <rect x=&quot;27&quot; y=&quot;22&quot; width=&quot;3&quot; height=&quot;3&quot; fill=&quot;#aaa&quot;/>
+          <rect x=&quot;33&quot; y=&quot;22&quot; width=&quot;3&quot; height=&quot;3&quot; fill=&quot;#aaa&quot;/>
+          <rect x=&quot;22&quot; y=&quot;27&quot; width=&quot;3&quot; height=&quot;3&quot; fill=&quot;#aaa&quot;/>
+          <rect x=&quot;33&quot; y=&quot;27&quot; width=&quot;3&quot; height=&quot;3&quot; fill=&quot;#aaa&quot;/>
+          <rect x=&quot;22&quot; y=&quot;33&quot; width=&quot;3&quot; height=&quot;3&quot; fill=&quot;#aaa&quot;/>
+          <rect x=&quot;27&quot; y=&quot;33&quot; width=&quot;3&quot; height=&quot;3&quot; fill=&quot;#aaa&quot;/>
+          <rect x=&quot;33&quot; y=&quot;33&quot; width=&quot;3&quot; height=&quot;3&quot; fill=&quot;#aaa&quot;/>
+        </svg>
+      </div>
+      <div class=&quot;qr-label&quot;>QR 자리</div>
+    </div>
+    <div class=&quot;chips-block&quot;>
+      <div class=&quot;chips-header&quot;>시·도별 미세먼지 농도 <span class=&quot;chips-unit&quot;>(단위: ㎍/㎥)</span></div>
+      <!-- 1줄 -->
+      <div style=&quot;display:flex;gap:2px;margin-bottom:5px;&quot;>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>서울</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>17</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#ffe0b2;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#7a3000;font-weight:500;margin-bottom:1px;&quot;>부산</div><div style=&quot;font-size:10pt;font-weight:900;color:#7a3000;line-height:1.1;&quot;>26</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#ffe0b2;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#7a3000;font-weight:500;margin-bottom:1px;&quot;>대구</div><div style=&quot;font-size:10pt;font-weight:900;color:#7a3000;line-height:1.1;&quot;>26</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#d5eddc;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4020;font-weight:500;margin-bottom:1px;&quot;>인천</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4020;line-height:1.1;&quot;>21</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>광주</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>15</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>대전</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>12</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#ffcdd2;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#800000;font-weight:500;margin-bottom:1px;&quot;>울산</div><div style=&quot;font-size:10pt;font-weight:900;color:#800000;line-height:1.1;&quot;>33</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>경기</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>18</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>강원</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>16</div></div></div>
+      </div>
+      <!-- 2줄 -->
+      <div style=&quot;display:flex;gap:2px;&quot;>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>충북</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>16</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>충남</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>16</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>전북</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>15</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>전남</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>16</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>세종</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>13</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#ffe0b2;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#7a3000;font-weight:500;margin-bottom:1px;&quot;>경북</div><div style=&quot;font-size:10pt;font-weight:900;color:#7a3000;line-height:1.1;&quot;>25</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#ffe0b2;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#7a3000;font-weight:500;margin-bottom:1px;&quot;>경남</div><div style=&quot;font-size:10pt;font-weight:900;color:#7a3000;line-height:1.1;&quot;>26</div></div></div>
+        <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>제주</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>12</div></div></div>
+        <div style=&quot;flex:1;&quot;></div>
+      </div>
+      <div class=&quot;chips-source&quot;>(출처: 에어코리아)</div>
+    </div>
+  </div>
+
+  <div class=&quot;content-row&quot;>
+    <div class=&quot;margin-note&quot;></div>
+    <div class=&quot;main-text&quot;>
+      <p>위의 서울 17, 부산 26, 대구 26, …과 같이 조사한 자료에서 각 대상을 수량으로 나타낸 것을 <span class=&quot;kw&quot;>변량</span>이라고 한다.</p>
+    </div>
+  </div>
+
+  <div class=&quot;content-row&quot; style=&quot;margin-top:15px;margin-bottom:15px;&quot;>
+    <div class=&quot;margin-note&quot;>
+      <div class=&quot;mn-label&quot;>초5~6 배운 내용</div>
+      <div class=&quot;frac-margin&quot;>
+        <span class=&quot;fn&quot;>(변량의 총합)</span>
+        <span class=&quot;fd&quot;>(변량의 개수)</span>
+      </div>
+    </div>
+    <div class=&quot;main-text&quot;>
+      <p>이 자료에서 17개 시·도의 미세먼지 농도의 평균을 구하면</p>
+      <div class=&quot;calc-block&quot;>
+        <div class=&quot;calc-line&quot;>
+          <span class=&quot;frac&quot;>
+            <span class=&quot;fn&quot;>17+26+26+21+15+12+33+18+16+16+16+15+16+13+25+26+12</span>
+            <span class=&quot;fd&quot;>17</span>
+          </span>
+          =
+          <span class=&quot;frac&quot;>
+            <span class=&quot;fn&quot;>323</span>
+            <span class=&quot;fd&quot;>17</span>
+          </span>
+          = <b>19</b>&amp;nbsp;(㎍/㎥)
+        </div>
+      </div>
+      <p>이다. 이 값은 우리나라 17개 시·도의 미세먼지 농도를 하나의 값으로 대표한다고 할 수 있다.</p>
+    </div>
+  </div>
+
+  <div class=&quot;content-row&quot; style=&quot;margin-bottom:0;&quot;>
+    <div class=&quot;margin-note&quot;></div>
+    <div class=&quot;main-text&quot;>
+      <p>이와 같이 자료의 특징이나 경향을 대표적으로 나타내는 값을 그 자료의 <span class=&quot;kw&quot;>대푯값</span>이라고 한다. 대푯값으로 가장 많이 쓰이는 것은 평균이다.</p>
+    </div>
+  </div>
+
+  <div style=&quot;flex:1;min-height:4px;&quot;></div>
+  <div class=&quot;prob-outer&quot;>
+    <div class=&quot;prob-head&quot;>
+      <div class=&quot;prob-head-circle&quot;>1</div>
+      <span class=&quot;prob-head-text&quot;>문&amp;nbsp;&amp;nbsp;제</span>
+    </div>
+    <div class=&quot;prob-body&quot;>
+      <div class=&quot;prob-img&quot;>[삽화 자리]<br>농구공·점수판<br>일러스트</div>
+      다음은 어느 농구 선수가 최근 7경기에서 기록한 득점을 조사한 자료이다.
+      <div class=&quot;prob-data&quot;>12&amp;nbsp;&amp;nbsp; 18&amp;nbsp;&amp;nbsp; 25&amp;nbsp;&amp;nbsp; 9&amp;nbsp;&amp;nbsp; 21&amp;nbsp;&amp;nbsp; 15&amp;nbsp;&amp;nbsp; 23<span class=&quot;prob-unit&quot;>(단위: 점)</span></div>
+      ⑴&amp;nbsp; 이 자료에서 변량의 개수를 말하시오.<br>
+      ⑵&amp;nbsp; 이 자료의 평균을 구하시오.
+    </div>
+  </div>
+
+  <div class=&quot;body-add&quot;>
+    <p>한편, 위의 미세먼지 자료에서 17개 시·도 중 14개 시·도의 농도는 평균인 19 ㎍/㎥보다 낮고, 울산(33 ㎍/㎥)처럼 다른 변량에 비해 매우 큰 값이 있으면 평균이 자료의 중심적인 경향을 잘 나타낸다고 할 수 없다.</p>
+    <p>이와 같이 변량 중에 매우 크거나 매우 작은 값이 있는 경우에는 평균이 이 자료의 대푯값으로 적절하지 않을 수 있으므로 <span class=&quot;kw&quot;>평균 이외의 다른 대푯값</span>이 필요하다.</p>
+  </div>
+
+  <div class=&quot;pg-center&quot;>
+    <div class=&quot;pg-badge&quot;>본문 1</div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>
+" loading="eager" scrolling="no"></iframe>
+            </div>
+          </div>
+          <div class="page-card">
+            <div class="page-num-chip after-chip">2</div>
+            <div class="page-frame-wrap">
+              <iframe class="page-frame" srcdoc="<!DOCTYPE html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>본문2 시안 B</title>
+<style>
+  body {
+    background: #e0dbd5;
+    margin: 0;
+    padding: 20px;
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+  }
+  .draft-label {
+    display: inline-block;
+    background: #333;
+    color: #fff;
+    font-size: 9pt;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .page-preview {
+    display: flex;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+<div class=&quot;draft-label&quot;>시안 B — 번호 뱃지형 칩</div>
+<div class=&quot;page-preview&quot;>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+.page{
+  font-family:'Noto Sans KR',sans-serif;
+  background:#fff;
+  width:210mm;
+  height:275mm;
+  padding:20mm;
+  color:#111;
+  margin:0 auto;
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.sub-title{
+  font-size:11pt;font-weight:900;color:#111;
+  border-bottom:2.5px solid #7B4A2D;
+  padding-bottom:3px;margin-bottom:9px;
+  display:flex;align-items:center;gap:6px;
+}
+.sub-circle{
+  width:22px;height:22px;background:#7B4A2D;border-radius:50%;
+  color:#fff;font-size:10pt;font-weight:900;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.content-row{display:flex;gap:0;margin-bottom:6px;align-items:flex-start;}
+.margin-note{
+  width:24mm;flex-shrink:0;padding-right:5px;
+  font-size:7pt;color:#1a50a0;font-weight:700;
+  line-height:1.6;text-align:right;padding-top:1px;
+}
+.main-text{flex:1;font-size:9pt;line-height:1.85;color:#111;}
+.main-text p{margin-bottom:4px;}
+.kw{font-weight:700;color:#111;}
+.frac-b{
+  display:inline-flex;flex-direction:column;align-items:center;
+  vertical-align:middle;margin:0 1px;font-size:8.5pt;line-height:1.3;
+}
+.frac-b .fn{border-bottom:1.5px solid #7B4A2D;padding:0 2px;color:#7B4A2D;font-weight:700;}
+.frac-b .fd{padding:0 2px;color:#7B4A2D;font-weight:700;}
+/* 칩 */
+.chips-wrap{margin:3px 0 2px 24mm;}
+.chips-header{font-size:7.5pt;color:#555;margin-bottom:3px;}
+.chips-unit{font-size:6.5pt;color:#888;}
+.chips-row{display:flex;gap:2px;margin-bottom:3px;}
+.chip{display:inline-flex;flex-direction:column;align-items:center;border-radius:4px;padding:3px 0;width:100%;}
+.chip .cn{font-size:6.5pt;font-weight:500;line-height:1.4;}
+.chip .cv{font-size:9pt;font-weight:700;line-height:1.3;}
+.cg{background:#cce8f8;color:#0d4f8a;}
+.cn2{background:#d5eddc;color:#1a5c28;}
+.cw{background:#ffe0b2;color:#b84800;}
+.cb{background:#ffcdd2;color:#b71c1c;}
+.cm{background:#7B4A2D;color:#fff;}
+.chip-col{display:flex;flex-direction:column;align-items:center;width:calc((100% - 16px)/9);}
+.chip-pos{font-size:5.5pt;color:#aaa;text-align:center;line-height:1.2;margin-top:1px;}
+.chip-pos.mid{color:#7B4A2D;font-weight:700;}
+.cm-note{font-size:7pt;color:#7B4A2D;font-weight:700;text-align:center;margin-top:1px;}
+.chips-source{font-size:6.5pt;color:#999;text-align:right;margin-top:1px;margin-bottom:4px;}
+
+/* ── 보기 A 스타일 ── */
+.bogi-wrap{margin-bottom:0;}
+.bogi-badge{
+  display:inline-block;background:#7B4A2D;color:#fff;
+  font-size:7.5pt;font-weight:700;
+  padding:2px 9px;border-radius:2px;margin-bottom:8px;
+}
+.a-row{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:7px;font-size:8.8pt;
+}
+.a-row:last-child{margin-bottom:0;}
+.a-no{
+  font-size:8.8pt;font-weight:700;color:#7B4A2D;
+  width:5mm;flex-shrink:0;
+}
+.a-box{
+  background:#f5f1ec;border:0.5px solid #d4c4b0;border-radius:4px;
+  padding:3px 10px;font-size:8.5pt;color:#444;
+  white-space:nowrap;
+}
+.n-c{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:19px;height:19px;background:#7B4A2D;color:#fff;border-radius:50%;
+  font-size:7.5pt;font-weight:700;vertical-align:middle;margin:0 1px;
+}
+.n-c2{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:19px;height:19px;background:#b06030;color:#fff;border-radius:50%;
+  font-size:7.5pt;font-weight:700;vertical-align:middle;margin:0 1px;
+}
+.a-arrow{font-size:10pt;color:#bbb;flex-shrink:0;}
+.a-result{font-size:8.8pt;color:#222;}
+.a-result b{color:#7B4A2D;}
+
+/* 문제 */
+.prob-outer{
+  border:1.5px solid #1a50a0;border-radius:5px;overflow:hidden;
+  margin-top:10mm;margin-bottom:10mm;
+}
+.prob-head{background:#1a50a0;padding:3px 11px;display:flex;align-items:center;gap:6px;}
+.prob-head-circle{
+  width:18px;height:18px;background:#fff;border-radius:50%;
+  color:#1a50a0;font-weight:900;font-size:9pt;
+  display:flex;align-items:center;justify-content:center;
+}
+.prob-head-text{color:#fff;font-size:8pt;font-weight:700;}
+.prob-body{padding:7px 11px 8px;font-size:9pt;line-height:1.85;}
+.prob-data{
+  border:0.5px solid #b0c4dd;border-radius:3px;
+  text-align:center;padding:4px 8px;margin:5px 0;
+  background:#f5f9ff;font-weight:700;font-size:9pt;letter-spacing:1px;
+}
+.prob-unit{font-size:6.5pt;font-weight:400;color:#666;margin-left:3px;}
+.prob-img{
+  float:right;margin-left:8px;width:26mm;height:20mm;
+  border:0.5px dashed #bbb;background:#f5f5f5;border-radius:3px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:6pt;color:#aaa;text-align:center;line-height:1.4;
+}
+.pg-center{position:absolute;bottom:7mm;left:0;right:0;display:flex;justify-content:center;}
+.pg-badge{
+  width:28px;height:28px;border:1.5px solid #555;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:7.5pt;font-weight:700;color:#333;background:#fff;letter-spacing:-0.3px;
+}
+</style>
+
+<div class=&quot;page&quot;>
+
+  <div style=&quot;display:flex;gap:0;align-items:flex-start;margin-bottom:10px;&quot;>
+    <div style=&quot;width:24mm;flex-shrink:0;display:flex;justify-content:center;align-items:flex-start;padding-right:4px;&quot;>
+      <div style=&quot;border:1.5px solid #7B4A2D;border-radius:5px;padding:4px 5px;text-align:center;background:#fdf8f3;&quot;>
+        <div style=&quot;font-size:13pt;line-height:1.2;&quot;>🚉</div>
+        <div style=&quot;font-size:5.8pt;font-weight:700;color:#7B4A2D;line-height:1.4;margin-top:2px;&quot;>두 번째<br>정거장</div>
+      </div>
+    </div>
+    <div class=&quot;sub-title&quot; style=&quot;flex:1;margin-bottom:0;&quot;>
+      <div class=&quot;sub-circle&quot;>❷</div>
+      중앙값은 무엇일까?
+    </div>
+  </div>
+
+  <div class=&quot;content-row&quot; style=&quot;margin-bottom:10mm;&quot;>
+    <div class=&quot;margin-note&quot;></div>
+    <div class=&quot;main-text&quot;>
+      <p>평균 이외에도 자료의 대푯값으로 사용할 수 있는 것을 알아보자.</p>
+    </div>
+  </div>
+
+  <div class=&quot;content-row&quot; style=&quot;margin-bottom:4px;&quot;>
+    <div class=&quot;margin-note&quot;></div>
+    <div class=&quot;main-text&quot;>
+      <p>자료의 변량을 작은 값부터 크기순으로 나열할 때 중앙에 위치하는 값을 그 자료의 <span class=&quot;kw&quot;>중앙값</span>이라고 한다.</p>
+      <p>중앙값을 구할 때는 변량을 작은 값부터 크기순으로 나열하여 변량의 개수가 <span class=&quot;kw&quot;>홀수</span>이면 중앙에 위치하는 값을 중앙값으로 하고, 변량의 개수가 <span class=&quot;kw&quot;>짝수</span>이면 중앙에 위치하는 두 값의 평균을 중앙값으로 한다.</p>
+    </div>
+  </div>
+
+  <div class=&quot;content-row&quot; style=&quot;margin-top:5mm;margin-bottom:3px;&quot;>
+    <div class=&quot;margin-note&quot;></div>
+    <div class=&quot;main-text&quot;>
+      <p>앞의 접지 자료에서 17개 시·도의 미세먼지 농도를 작은 값부터 순서대로 나열하면 다음과 같다.</p>
+    </div>
+  </div>
+
+  <div style=&quot;display:flex;gap:0;margin-bottom:0;align-items:flex-start;&quot;>
+    <!-- 왼쪽 마진 — 캐릭터 자리 -->
+    <div style=&quot;width:24mm;flex-shrink:0;padding-right:5px;display:flex;flex-direction:column;align-items:center;gap:3px;&quot;>
+      <!-- 말풍선 -->
+      <div style=&quot;position:relative;background:#7B4A2D;border-radius:6px;padding:4px 5px;text-align:center;margin-bottom:4px;width:18mm;&quot;>
+        <span style=&quot;font-size:6pt;font-weight:700;color:#fff;line-height:1.5;&quot;>작은 값부터<br>순!서!대!로!</span>
+        <!-- 꼬리 -->
+        <div style=&quot;position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid #7B4A2D;&quot;></div>
+      </div>
+      <!-- 캐릭터 자리 -->
+      <div style=&quot;width:18mm;height:18mm;border:1px dashed #bbb;background:#f7f7f7;border-radius:4px;display:flex;align-items:center;justify-content:center;text-align:center;&quot;>
+        <span style=&quot;font-size:5.5pt;color:#aaa;line-height:1.5;&quot;>캐릭터<br>자리</span>
+      </div>
+    </div>
+    <!-- 칩 영역 -->
+    <div style=&quot;flex:1;&quot;>
+  <div style=&quot;margin:2px 0 2px 0;&quot;>
+    <div style=&quot;font-size:7.5pt;color:#555;margin-bottom:4px;display:flex;justify-content:space-between;&quot;>
+      <span>시·도별 미세먼지 농도 (작은 값부터 순서대로) <span style=&quot;font-size:6.5pt;color:#888;&quot;>(단위: ㎍/㎥)</span></span>
+    </div>
+    <!-- 1줄 -->
+    <div style=&quot;display:flex;gap:2px;margin-bottom:5px;&quot;>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#999;font-weight:700;&quot;>1</div><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>대전</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>12</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#999;font-weight:700;&quot;>2</div><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>제주</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>12</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#999;font-weight:700;&quot;>3</div><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>세종</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>13</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#999;font-weight:700;&quot;>4</div><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>광주</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>15</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#999;font-weight:700;&quot;>5</div><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>전북</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>15</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#999;font-weight:700;&quot;>6</div><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>강원</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>16</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#999;font-weight:700;&quot;>7</div><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>충북</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>16</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#999;font-weight:700;&quot;>8</div><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>충남</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>16</div></div></div>
+      <!-- 전남 중앙값 -->
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;>
+        <div style=&quot;width:13px;height:13px;border-radius:50%;background:#7B4A2D;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#fff;font-weight:700;&quot;>9</div>
+        <div style=&quot;width:100%;background:#7B4A2D;border-radius:5px;padding:4px 1px;text-align:center;box-shadow:0 2px 4px rgba(123,74,45,0.35);&quot;><div style=&quot;font-size:5.8pt;color:rgba(255,255,255,0.85);font-weight:500;margin-bottom:1px;&quot;>전남</div><div style=&quot;font-size:10pt;font-weight:900;color:#fff;line-height:1.1;&quot;>16</div></div>
+        <div style=&quot;font-size:6pt;font-weight:700;color:#7B4A2D;white-space:nowrap;margin-top:1px;&quot;>▲ 중앙값</div>
+      </div>
+    </div>
+    <!-- 2줄 -->
+    <div style=&quot;display:flex;gap:2px;&quot;>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:4.5pt;color:#999;font-weight:700;&quot;>10</div><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>서울</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>17</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:4.5pt;color:#999;font-weight:700;&quot;>11</div><div style=&quot;width:100%;background:#cce8f8;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4070;font-weight:500;margin-bottom:1px;&quot;>경기</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4070;line-height:1.1;&quot;>18</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:4.5pt;color:#999;font-weight:700;&quot;>12</div><div style=&quot;width:100%;background:#d5eddc;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#0a4020;font-weight:500;margin-bottom:1px;&quot;>인천</div><div style=&quot;font-size:10pt;font-weight:900;color:#0a4020;line-height:1.1;&quot;>21</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:4.5pt;color:#999;font-weight:700;&quot;>13</div><div style=&quot;width:100%;background:#ffe0b2;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#7a3000;font-weight:500;margin-bottom:1px;&quot;>경북</div><div style=&quot;font-size:10pt;font-weight:900;color:#7a3000;line-height:1.1;&quot;>25</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:4.5pt;color:#999;font-weight:700;&quot;>14</div><div style=&quot;width:100%;background:#ffe0b2;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#7a3000;font-weight:500;margin-bottom:1px;&quot;>부산</div><div style=&quot;font-size:10pt;font-weight:900;color:#7a3000;line-height:1.1;&quot;>26</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:4.5pt;color:#999;font-weight:700;&quot;>15</div><div style=&quot;width:100%;background:#ffe0b2;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#7a3000;font-weight:500;margin-bottom:1px;&quot;>대구</div><div style=&quot;font-size:10pt;font-weight:900;color:#7a3000;line-height:1.1;&quot;>26</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:4.5pt;color:#999;font-weight:700;&quot;>16</div><div style=&quot;width:100%;background:#ffe0b2;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#7a3000;font-weight:500;margin-bottom:1px;&quot;>경남</div><div style=&quot;font-size:10pt;font-weight:900;color:#7a3000;line-height:1.1;&quot;>26</div></div></div>
+      <div style=&quot;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;&quot;><div style=&quot;width:13px;height:13px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:4.5pt;color:#999;font-weight:700;&quot;>17</div><div style=&quot;width:100%;background:#ffcdd2;border-radius:5px;padding:4px 1px;text-align:center;&quot;><div style=&quot;font-size:5.8pt;color:#800000;font-weight:500;margin-bottom:1px;&quot;>울산</div><div style=&quot;font-size:10pt;font-weight:900;color:#800000;line-height:1.1;&quot;>33</div></div></div>
+      <div style=&quot;flex:1;&quot;></div>
+    </div>
+    <div style=&quot;text-align:right;font-size:6pt;color:#aaa;margin-top:4px;&quot;>(출처: 에어코리아)</div>
+  </div>
+    </div><!-- flex:1 end -->
+  </div><!-- chips row end -->
+
+  <div class=&quot;content-row&quot; style=&quot;margin-bottom:6px;&quot;>
+    <div class=&quot;margin-note&quot;></div>
+    <div class=&quot;main-text&quot;>
+      <p>변량의 개수가 17개(홀수)이므로 9번째 값인 전남의 농도가 중앙값이다. 따라서 이 자료의 <span class=&quot;kw&quot;>중앙값은 16 ㎍/㎥</span>이다.</p>
+    </div>
+  </div>
+
+  <div class=&quot;content-row&quot; style=&quot;margin-top:5mm;margin-bottom:7px;&quot;>
+    <div class=&quot;margin-note&quot;></div>
+    <div class=&quot;main-text&quot;>
+      <p>일반적으로 자료의 값 중에서 매우 크거나 매우 작은 값이 있는 경우에는 평균보다 <span class=&quot;kw&quot;>중앙값</span>이 대푯값으로 적절하다.</p>
+    </div>
+  </div>
+
+  <!-- 보기 A 스타일 -->
+  <div class=&quot;bogi-wrap&quot;>
+    <div class=&quot;bogi-badge&quot;>보기</div>
+    <div class=&quot;a-row&quot;>
+      <span class=&quot;a-no&quot;>⑴</span>
+      <div class=&quot;a-box&quot;>3 ,&amp;nbsp; 17 ,&amp;nbsp; <span class=&quot;n-c&quot;>19</span> ,&amp;nbsp; 20 ,&amp;nbsp; 21</div>
+      <span class=&quot;a-arrow&quot;>→</span>
+      <span class=&quot;a-result&quot;>홀수 개 → 중앙값 <b>19</b></span>
+    </div>
+    <div class=&quot;a-row&quot;>
+      <span class=&quot;a-no&quot;>⑵</span>
+      <div class=&quot;a-box&quot;>5 ,&amp;nbsp; 6 ,&amp;nbsp; 6 ,&amp;nbsp; <span class=&quot;n-c&quot;>7</span> ,&amp;nbsp; <span class=&quot;n-c2&quot;>9</span> ,&amp;nbsp; 9 ,&amp;nbsp; 10 ,&amp;nbsp; 27</div>
+      <span class=&quot;a-arrow&quot;>→</span>
+      <span class=&quot;a-result&quot;>짝수 개 → 중앙값 <span class=&quot;frac-b&quot;><span class=&quot;fn&quot;>7+9</span><span class=&quot;fd&quot;>2</span></span> = <b>8</b></span>
+    </div>
+  </div>
+
+  <!-- 문제 2 -->
+  <div class=&quot;prob-outer&quot;>
+    <div class=&quot;prob-head&quot;>
+      <div class=&quot;prob-head-circle&quot;>2</div>
+      <span class=&quot;prob-head-text&quot;>문&amp;nbsp;&amp;nbsp;제</span>
+    </div>
+    <div class=&quot;prob-body&quot;>
+      <div class=&quot;prob-img&quot;>[삽화 자리]<br>반려견 산책<br>일러스트</div>
+      다음은 어느 반려견 카페 회원 8명이 하루에 반려견과 산책한 시간을 조사한 자료이다.
+      <div class=&quot;prob-data&quot;>20&amp;nbsp; 35&amp;nbsp; 30&amp;nbsp; 25&amp;nbsp; 40&amp;nbsp; 30&amp;nbsp; 50&amp;nbsp; 45<span class=&quot;prob-unit&quot;>(단위: 분)</span></div>
+      이 자료의 중앙값을 구하시오.
+    </div>
+  </div>
+
+  <div class=&quot;pg-center&quot;>
+    <div class=&quot;pg-badge&quot;>본문 2</div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>
+" loading="eager" scrolling="no"></iframe>
+            </div>
+          </div>
+          <div class="page-card">
+            <div class="page-num-chip after-chip">3</div>
+            <div class="page-frame-wrap">
+              <iframe class="page-frame" srcdoc="
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:#e8e4de;padding:16px;}
+.draft-label{font-size:9pt;font-weight:700;color:#fff;background:#333;display:inline-block;padding:3px 12px;border-radius:3px;margin-bottom:10px;}
+.page{background:#fff;width:210mm;height:275mm;padding:20mm;color:#111;margin:0 auto;overflow:hidden;display:flex;flex-direction:column;position:relative;}
+.sub-title{font-size:11pt;font-weight:900;color:#111;border-bottom:2.5px solid #7B4A2D;padding-bottom:4px;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.sub-circle{width:22px;height:22px;background:#7B4A2D;border-radius:50%;color:#fff;font-size:10pt;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.crow{display:flex;gap:0;align-items:flex-start;}
+.mn{width:24mm;flex-shrink:0;padding-right:4px;}
+.mt{flex:1;font-size:9pt;line-height:1.88;color:#111;}
+.mt p{margin-bottom:4px;}
+.kw{font-weight:700;color:#111;}
+.chips-wrap{margin-left:24mm;}
+.chips-header{font-size:7.5pt;color:#555;margin-bottom:3px;}
+.chips-unit{font-size:6.5pt;color:#888;}
+.chips-row{display:flex;gap:2px;margin-bottom:2px;}
+.chip{display:inline-flex;flex-direction:column;align-items:center;border-radius:4px;padding:3px 0;width:calc((100% - 14px)/8);}
+.chip .cn{font-size:6.5pt;font-weight:500;line-height:1.4;}
+.chip .cv{font-size:8.8pt;font-weight:700;line-height:1.3;}
+.cg{background:#cce8f8;color:#0d4f8a;}
+.cn2{background:#d5eddc;color:#1a5c28;}
+.cw{background:#ffe0b2;color:#b84800;}
+.cb{background:#ffcdd2;color:#b71c1c;}
+.cm{background:#7B4A2D;color:#fff;}
+.chips-legend{display:flex;align-items:center;gap:8px;margin-top:3px;justify-content:space-between;}
+.legend-item{display:flex;align-items:center;gap:3px;font-size:6.5pt;color:#555;}
+.legend-dot{width:9px;height:9px;border-radius:2px;background:#7B4A2D;}
+.chips-source{font-size:6.5pt;color:#999;}
+.together-box{border:1.5px solid #7B4A2D;border-radius:5px;overflow:hidden;}
+.together-header{background:#7B4A2D;color:#fff;padding:4px 12px;font-size:8.5pt;font-weight:700;}
+.together-body{padding:8px 13px;font-size:8.5pt;line-height:1.85;}
+.q-num{font-weight:700;color:#7B4A2D;margin-right:4px;}
+.bar-card{background:#f5f8ff;border:0.5px solid #c8d8f0;border-radius:6px;padding:9px 12px;margin:7px 0;}
+.bar-card-title{font-size:7.5pt;font-weight:700;color:#2a5090;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.bar-card-title::before{content:'';display:inline-block;width:3px;height:12px;background:#2a5090;border-radius:2px;flex-shrink:0;}
+.freq-row{display:flex;align-items:center;gap:0;margin-bottom:6px;}
+.freq-row:last-child{margin-bottom:0;}
+.grade-label-c{display:flex;align-items:center;gap:5px;width:20mm;flex-shrink:0;}
+.grade-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.grade-name-c{font-size:7.5pt;font-weight:700;}
+.bar-area{flex:1;display:flex;align-items:center;gap:7px;}
+.bar-track{flex:1;height:20px;background:#e8eef8;border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 9px;}
+.bar-regions{font-size:6.5pt;font-weight:600;color:rgba(255,255,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-count{font-size:7.5pt;font-weight:700;color:#444;white-space:nowrap;width:8mm;text-align:left;flex-shrink:0;}
+.prob-outer{border:1.5px solid #1a50a0;border-radius:5px;overflow:hidden;margin-top:auto;}
+.prob-head{background:#1a50a0;padding:4px 11px;display:flex;align-items:center;gap:6px;}
+.prob-head-circle{width:18px;height:18px;background:#fff;border-radius:50%;color:#1a50a0;font-weight:900;font-size:9pt;display:flex;align-items:center;justify-content:center;}
+.prob-head-text{color:#fff;font-size:8pt;font-weight:700;}
+.prob-body{padding:8px 12px 9px;font-size:9pt;line-height:1.85;}
+.data-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin:5px 0;border:0.5px solid #b0c4dd;border-radius:3px;background:#f5f9ff;padding:5px 8px;}
+.data-cell{font-size:8.5pt;font-weight:700;text-align:center;color:#1a1a1a;}
+.prob-img{float:right;margin-left:8px;width:22mm;height:16mm;border:0.5px dashed #bbb;background:#f5f5f5;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:5.5pt;color:#aaa;text-align:center;line-height:1.4;}
+.pg-center{position:absolute;bottom:7mm;left:0;right:0;display:flex;justify-content:center;}
+.pg-badge{width:26px;height:26px;border:1.5px solid #555;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7pt;font-weight:700;color:#333;background:#fff;letter-spacing:-0.3px;}
+</style>
+
+<div class=&quot;draft-label&quot;>본문 3 — 최종 시안</div>
+<div class=&quot;page&quot;>
+  <div style=&quot;display:flex;gap:0;align-items:flex-start;margin-bottom:10px;&quot;>
+    <div style=&quot;width:24mm;flex-shrink:0;display:flex;justify-content:center;align-items:flex-start;padding-right:4px;&quot;>
+      <div style=&quot;border:1.5px solid #7B4A2D;border-radius:5px;padding:4px 5px;text-align:center;background:#fdf8f3;&quot;>
+        <div style=&quot;font-size:13pt;line-height:1.2;&quot;>🏁</div>
+        <div style=&quot;font-size:5.8pt;font-weight:700;color:#7B4A2D;line-height:1.4;margin-top:2px;&quot;>세 번째<br>정거장</div>
+      </div>
+    </div>
+    <div class=&quot;sub-title&quot; style=&quot;flex:1;margin-bottom:0;&quot;><div class=&quot;sub-circle&quot;>❸</div>최빈값은 무엇일까?</div>
+  </div>
+
+  <div class=&quot;crow&quot; style=&quot;margin-bottom:8px;&quot;>
+    <div class=&quot;mn&quot;></div>
+    <div class=&quot;mt&quot;>
+      <p>이제 평균, 중앙값 이외에 또 다른 대푯값을 알아보자.</p>
+      <p>앞의 접지 자료에서 17개 시·도의 미세먼지 농도를 살펴보면, 16 ㎍/㎥가 강원, 충북, 충남, 전남으로 <b>4번</b> 나타나 가장 많다.</p>
+    </div>
+  </div>
+
+  <div class=&quot;chips-wrap&quot; style=&quot;margin-bottom:8px;&quot;>
+    <div class=&quot;chips-header&quot;>시·도별 미세먼지 농도 <span class=&quot;chips-unit&quot;>(단위: ㎍/㎥)</span></div>
+    <div class=&quot;chips-row&quot;>
+      <div class=&quot;chip cg&quot;><span class=&quot;cn&quot;>서울</span><span class=&quot;cv&quot;>17</span></div>
+      <div class=&quot;chip cw&quot;><span class=&quot;cn&quot;>부산</span><span class=&quot;cv&quot;>26</span></div>
+      <div class=&quot;chip cw&quot;><span class=&quot;cn&quot;>대구</span><span class=&quot;cv&quot;>26</span></div>
+      <div class=&quot;chip cn2&quot;><span class=&quot;cn&quot;>인천</span><span class=&quot;cv&quot;>21</span></div>
+      <div class=&quot;chip cg&quot;><span class=&quot;cn&quot;>광주</span><span class=&quot;cv&quot;>15</span></div>
+      <div class=&quot;chip cg&quot;><span class=&quot;cn&quot;>대전</span><span class=&quot;cv&quot;>12</span></div>
+      <div class=&quot;chip cb&quot;><span class=&quot;cn&quot;>울산</span><span class=&quot;cv&quot;>33</span></div>
+      <div class=&quot;chip cg&quot;><span class=&quot;cn&quot;>경기</span><span class=&quot;cv&quot;>18</span></div>
+      <div class=&quot;chip cm&quot;><span class=&quot;cn&quot;>강원</span><span class=&quot;cv&quot;>16</span></div>
+    </div>
+    <div class=&quot;chips-row&quot;>
+      <div class=&quot;chip cm&quot;><span class=&quot;cn&quot;>충북</span><span class=&quot;cv&quot;>16</span></div>
+      <div class=&quot;chip cm&quot;><span class=&quot;cn&quot;>충남</span><span class=&quot;cv&quot;>16</span></div>
+      <div class=&quot;chip cg&quot;><span class=&quot;cn&quot;>전북</span><span class=&quot;cv&quot;>15</span></div>
+      <div class=&quot;chip cm&quot;><span class=&quot;cn&quot;>전남</span><span class=&quot;cv&quot;>16</span></div>
+      <div class=&quot;chip cg&quot;><span class=&quot;cn&quot;>세종</span><span class=&quot;cv&quot;>13</span></div>
+      <div class=&quot;chip cw&quot;><span class=&quot;cn&quot;>경북</span><span class=&quot;cv&quot;>25</span></div>
+      <div class=&quot;chip cw&quot;><span class=&quot;cn&quot;>경남</span><span class=&quot;cv&quot;>26</span></div>
+      <div class=&quot;chip cg&quot;><span class=&quot;cn&quot;>제주</span><span class=&quot;cv&quot;>12</span></div>
+      <div class=&quot;chip&quot; style=&quot;background:transparent;&quot;></div>
+    </div>
+    <div class=&quot;chips-legend&quot;>
+      <div class=&quot;legend-item&quot;><div class=&quot;legend-dot&quot;></div>최빈값 (16 ㎍/㎥)</div>
+      <div class=&quot;chips-source&quot;>(출처: 에어코리아)</div>
+    </div>
+  </div>
+
+  <div class=&quot;crow&quot; style=&quot;margin-bottom:18px;&quot;>
+    <div class=&quot;mn&quot;></div>
+    <div class=&quot;mt&quot;>
+      <p>이와 같이 자료의 변량 중에서 <span class=&quot;kw&quot;>가장 많이 나타나는 값</span>을 그 자료의 <span class=&quot;kw&quot;>최빈값</span>이라고 한다. 따라서 이 자료의 <span class=&quot;kw&quot;>최빈값은 16 ㎍/㎥</span>이다.</p>
+    </div>
+  </div>
+
+  <div class=&quot;crow&quot; style=&quot;margin-bottom:20px;&quot;>
+    <div class=&quot;mn&quot;></div>
+    <div class=&quot;mt&quot;>
+      <p>최빈값은 수로 나타낸 자료뿐만 아니라, 미세먼지 농도의 등급(좋음, 보통, 나쁨, 매우나쁨)처럼 <span class=&quot;kw&quot;>수로 나타낼 수 없는 자료</span>에서도 사용할 수 있다. 또, 자료에 따라 최빈값이 <span class=&quot;kw&quot;>두 개 이상</span>일 수도 있다.</p>
+    </div>
+  </div>
+
+  <div class=&quot;together-box&quot; style=&quot;margin-bottom:10px;&quot;>
+    <div class=&quot;together-header&quot;>함께하기</div>
+    <div class=&quot;together-body&quot;>
+      <p style=&quot;margin-bottom:4px;&quot;>앞의 접지 자료에서 17개 시·도의 미세먼지 농도를 등급별로 나타내면 다음과 같다.</p>
+      <div class=&quot;bar-card&quot;>
+        <div class=&quot;bar-card-title&quot;>등급별 시·도 수</div>
+        <div class=&quot;freq-row&quot;>
+          <div class=&quot;grade-label-c&quot;><div class=&quot;grade-dot&quot; style=&quot;background:#5aabcc;&quot;></div><span class=&quot;grade-name-c&quot; style=&quot;color:#0d4f8a;&quot;>좋음</span></div>
+          <div class=&quot;bar-area&quot;><div class=&quot;bar-track&quot;><div class=&quot;bar-fill&quot; style=&quot;width:65%;background:linear-gradient(90deg,#4a9fc0,#6bbede);&quot;><span class=&quot;bar-regions&quot;>서울·광주·대전·경기·강원·충북·충남·전북·전남·세종·제주</span></div></div><span class=&quot;bar-count&quot;>11개</span></div>
+        </div>
+        <div class=&quot;freq-row&quot;>
+          <div class=&quot;grade-label-c&quot;><div class=&quot;grade-dot&quot; style=&quot;background:#60b870;&quot;></div><span class=&quot;grade-name-c&quot; style=&quot;color:#1a5c28;&quot;>보통</span></div>
+          <div class=&quot;bar-area&quot;><div class=&quot;bar-track&quot;><div class=&quot;bar-fill&quot; style=&quot;width:6%;background:linear-gradient(90deg,#50a860,#78c880);&quot;></div></div><span class=&quot;bar-count&quot;>1개</span></div>
+        </div>
+        <div class=&quot;freq-row&quot;>
+          <div class=&quot;grade-label-c&quot;><div class=&quot;grade-dot&quot; style=&quot;background:#e8a030;&quot;></div><span class=&quot;grade-name-c&quot; style=&quot;color:#b84800;&quot;>나쁨</span></div>
+          <div class=&quot;bar-area&quot;><div class=&quot;bar-track&quot;><div class=&quot;bar-fill&quot; style=&quot;width:24%;background:linear-gradient(90deg,#d88820,#f0a840);&quot;><span class=&quot;bar-regions&quot;>부산·대구·경북·경남</span></div></div><span class=&quot;bar-count&quot;>4개</span></div>
+        </div>
+        <div class=&quot;freq-row&quot;>
+          <div class=&quot;grade-label-c&quot;><div class=&quot;grade-dot&quot; style=&quot;background:#e07070;&quot;></div><span class=&quot;grade-name-c&quot; style=&quot;color:#b71c1c;&quot;>매우나쁨</span></div>
+          <div class=&quot;bar-area&quot;><div class=&quot;bar-track&quot;><div class=&quot;bar-fill&quot; style=&quot;width:6%;background:linear-gradient(90deg,#d05858,#e87878);&quot;></div></div><span class=&quot;bar-count&quot;>1개</span></div>
+        </div>
+      </div>
+      <div style=&quot;margin-top:1px;&quot;><span class=&quot;q-num&quot;>1</span>가장 많은 시·도가 속한 등급은 무엇인지 말해 보자.</div>
+      <div style=&quot;margin-top:4px;&quot;><span class=&quot;q-num&quot;>2</span>이 자료의 최빈값을 구하고, 그 이유를 말해 보자.</div>
+    </div>
+  </div>
+
+  <div class=&quot;crow&quot; style=&quot;margin-bottom:0;&quot;>
+    <div class=&quot;mn&quot;></div>
+    <div class=&quot;mt&quot;>
+      <p>위의 함께하기에서 <b>좋음</b> 등급이 11개로 가장 많이 나타났다. 따라서 이 자료의 <span class=&quot;kw&quot;>최빈값은 '좋음' 등급</span>이다.</p>
+    </div>
+  </div>
+
+  <!-- 문제 3 — 마라탕 5번, 제육볶음 5번 → 최빈값 2개 -->
+  <div class=&quot;prob-outer&quot;>
+    <div class=&quot;prob-head&quot;><div class=&quot;prob-head-circle&quot;>3</div><span class=&quot;prob-head-text&quot;>문&amp;nbsp;&amp;nbsp;제</span></div>
+    <div class=&quot;prob-body&quot;>
+      <div class=&quot;prob-img&quot;>[삽화]<br>급식 트레이</div>
+      다음은 어느 반 학생 15명이 가장 좋아하는 급식 메뉴를 조사한 자료이다.
+      <div class=&quot;data-grid&quot;>
+        <div class=&quot;data-cell&quot;>마라탕</div><div class=&quot;data-cell&quot;>제육볶음</div><div class=&quot;data-cell&quot;>마라탕</div><div class=&quot;data-cell&quot;>비빔밥</div><div class=&quot;data-cell&quot;>마라탕</div>
+        <div class=&quot;data-cell&quot;>떡볶이</div><div class=&quot;data-cell&quot;>제육볶음</div><div class=&quot;data-cell&quot;>마라탕</div><div class=&quot;data-cell&quot;>비빔밥</div><div class=&quot;data-cell&quot;>떡볶이</div>
+        <div class=&quot;data-cell&quot;>마라탕</div><div class=&quot;data-cell&quot;>제육볶음</div><div class=&quot;data-cell&quot;>떡볶이</div><div class=&quot;data-cell&quot;>제육볶음</div><div class=&quot;data-cell&quot;>제육볶음</div>
+      </div>
+      이 자료의 최빈값을 구하시오.
+    </div>
+  </div>
+
+  <div class=&quot;pg-center&quot;><div class=&quot;pg-badge&quot;>본문 3</div></div>
+</div>
+" loading="eager" scrolling="no"></iframe>
+            </div>
+          </div>
+          <div class="page-card">
+            <div class="page-num-chip after-chip">4</div>
+            <div class="page-frame-wrap">
+              <iframe class="page-frame" srcdoc="
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:#e8e4de;padding:16px;}
+.draft-label{font-size:9pt;font-weight:700;color:#fff;background:#333;display:inline-block;padding:3px 12px;border-radius:3px;margin-bottom:10px;}
+.page{background:#fff;width:210mm;height:275mm;padding:20mm;color:#111;margin:0 auto 28px;overflow:hidden;display:flex;flex-direction:column;position:relative;}
+.ct-outer{border:1.5px solid #2a6496;border-radius:6px;overflow:hidden;flex:1;display:flex;flex-direction:column;}
+.ct-header{background:#2a6496;padding:7px 14px;display:flex;align-items:center;gap:8px;}
+.ct-title{color:#fff;font-size:11pt;font-weight:900;}
+.ct-badge{background:rgba(255,255,255,0.2);border-radius:12px;padding:3px 11px;font-size:7.5pt;font-weight:700;color:#fff;white-space:nowrap;margin-left:4px;}
+.ct-body{padding:14px 17px 14px;display:flex;flex-direction:column;flex:1;}
+
+/* 공통 섹션 간격 */
+.mb20{margin-bottom:20px;}
+
+.situation{font-size:9pt;line-height:1.9;color:#111;}
+.group-b{background:#f5f8ff;border-radius:7px;padding:11px 13px;}
+.arrow-divider{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 0;}
+.arrow-line{height:1px;flex:1;background:#b8d0e8;}
+.arrow-label{background:#2a6496;color:#fff;font-size:6.5pt;font-weight:700;padding:2px 10px;border-radius:10px;white-space:nowrap;}
+
+/* SNS */
+.sns-post{background:#fff;border-radius:10px;border:1px solid #dde4ee;padding:10px 12px;}
+.sns-header{display:flex;align-items:center;gap:7px;margin-bottom:7px;}
+.sns-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#f9a825,#e91e63);display:flex;align-items:center;justify-content:center;font-size:13pt;flex-shrink:0;}
+.sns-name{font-size:8pt;font-weight:700;color:#111;}
+.sns-handle{font-size:7pt;color:#888;}
+.sns-platform{font-size:6.5pt;font-weight:700;color:#fff;background:#3b5998;border-radius:3px;padding:1px 5px;margin-left:auto;}
+.sns-content{font-size:8.8pt;line-height:1.8;color:#111;margin-bottom:8px;}
+.sns-img-mock{background:linear-gradient(135deg,#e8f4ff,#d0e8ff);border-radius:6px;padding:8px 12px;font-size:9pt;font-weight:900;color:#1a50a0;text-align:center;letter-spacing:0.5px;margin-bottom:8px;line-height:1.7;}
+.sns-stats{display:flex;gap:12px;font-size:7pt;color:#888;border-top:0.5px solid #eee;padding-top:5px;}
+.fact-cards{display:flex;gap:8px;}
+.fact-card{flex:1;border-radius:6px;padding:9px 11px;}
+.fc-ok{background:#e8f5e9;border-left:3px solid #2e7d32;}
+.fc-ng{background:#fff2f2;border-left:3px solid #e03030;}
+.fc-title{font-size:7.3pt;font-weight:700;margin-bottom:4px;}
+.fc-title-ok{color:#2e7d32;}
+.fc-title-ng{color:#c00000;}
+.fc-body{font-size:8pt;line-height:1.75;color:#333;}
+
+/* VS 그리드 */
+.same-data-box{background:#fff;border-radius:7px;border:1.5px solid #b8d0e8;padding:10px 12px;text-align:center;}
+.sd-label{font-size:7pt;font-weight:700;color:#2a6496;margin-bottom:5px;}
+.sd-values{display:flex;gap:6px;justify-content:center;}
+.sd-val{border-radius:4px;padding:4px 12px;font-size:8.2pt;font-weight:700;}
+.vs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.vs-card{border-radius:6px;padding:10px 11px;}
+.vs-env{background:#e8f0f8;border-left:3px solid #1a50a0;}
+.vs-ngo{background:#fff3e0;border-left:3px solid #e65100;}
+.vs-tour{background:#e8f5e9;border-left:3px solid #2e7d32;}
+.vs-citizen{background:#fff2f2;border-left:3px solid #e03030;}
+.vs-name{font-size:7.5pt;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:4px;}
+.vs-body{font-size:8.2pt;line-height:1.75;color:#333;}
+
+/* 발문 */
+.q-label{display:flex;align-items:flex-start;gap:6px;font-size:8.8pt;line-height:1.82;color:#111;margin-bottom:5px;}
+.qno{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#2a6496;color:#fff;font-size:7.5pt;font-weight:700;flex-shrink:0;margin-top:2px;}
+.write-fixed{border:0.5px dashed #b8d0e8;border-radius:4px;background:#f8fbff;height:20mm;display:flex;align-items:flex-start;padding:6px 10px;color:#ccc;font-size:7pt;}
+.q-last{display:flex;flex-direction:column;flex:1;}
+.write-flex{border:0.5px dashed #b8d0e8;border-radius:4px;background:#f8fbff;flex:1;display:flex;align-items:flex-start;padding:6px 10px;color:#ccc;font-size:7pt;margin-right:36mm;}
+
+.math-img{position:absolute;bottom:14mm;right:20mm;width:30mm;height:50mm;border:1px dashed #bbb;background:#f5f5f5;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;}
+.pg-center{position:absolute;bottom:7mm;left:0;right:0;display:flex;justify-content:center;}
+.pg-badge{width:26px;height:26px;border:1.5px solid #555;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7pt;font-weight:700;color:#333;background:#fff;letter-spacing:-0.3px;}
+</style>
+
+<!-- ════ 시안 1 ════ -->
+<div class=&quot;draft-label&quot;>시안 1 — SNS 팩트체크</div>
+<div class=&quot;page&quot;>
+  <div class=&quot;ct-outer&quot;>
+    <div class=&quot;ct-header&quot;>
+      <span class=&quot;ct-title&quot;>생각 더하기</span>
+      <div class=&quot;ct-badge&quot;>💬 비판적으로 사고하기</div>
+    </div>
+    <div class=&quot;ct-body&quot;>
+
+      <div class=&quot;situation mb20&quot;>다음은 한 인플루언서의 SNS 게시물이다. 앞의 접지 자료를 바탕으로 이 게시물의 내용을 비판적으로 검토해 보자.</div>
+
+      <div class=&quot;group-b mb20&quot;>
+        <div class=&quot;sns-post&quot;>
+          <div class=&quot;sns-header&quot;>
+            <div class=&quot;sns-avatar&quot;>🌿</div>
+            <div>
+              <div class=&quot;sns-name&quot;>환경 인플루언서 @green_life</div>
+              <div class=&quot;sns-handle&quot;>팔로워 24.3만</div>
+            </div>
+            <div class=&quot;sns-platform&quot;>SNS</div>
+          </div>
+          <div class=&quot;sns-content&quot;>오늘 환경부 발표 봤어요? 전국 미세먼지 평균이 <b>19 ㎍/㎥</b>로 '좋음' 수준이래요! 🎉<br>우리나라 대기질 많이 좋아졌죠? 오늘 같은 날은 야외 활동 강추! ☀️</div>
+          <div class=&quot;sns-img-mock&quot;>📊 전국 평균 미세먼지 19 ㎍/㎥ — 좋음 ✅</div>
+          <div class=&quot;sns-stats&quot;>
+            <span>❤️ 좋아요 3,241</span>
+            <span>💬 댓글 184</span>
+            <span>↗️ 공유 927</span>
+          </div>
+        </div>
+        <div class=&quot;arrow-divider&quot;>
+          <div class=&quot;arrow-line&quot;></div>
+          <div class=&quot;arrow-label&quot;>🔍 팩트체크 ▼</div>
+          <div class=&quot;arrow-line&quot;></div>
+        </div>
+        <div class=&quot;fact-cards&quot;>
+          <div class=&quot;fact-card fc-ok&quot;>
+            <div class=&quot;fc-title fc-title-ok&quot;>✅ 사실인 것</div>
+            <div class=&quot;fc-body&quot;>전국 17개 시·도 미세먼지 농도의 <b>평균은 19 ㎍/㎥</b>로, '좋음' 등급에 해당한다는 점은 맞다.</div>
+          </div>
+          <div class=&quot;fact-card fc-ng&quot;>
+            <div class=&quot;fc-title fc-title-ng&quot;>❌ 빠진 것</div>
+            <div class=&quot;fc-body&quot;>중앙값·최빈값은 모두 <b>16 ㎍/㎥</b>이고, 울산은 <b>33 ㎍/㎥</b>(나쁨)이다. 평균만으로 '좋음'이라 단정하기 어렵다.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class=&quot;q-label mb20&quot; style=&quot;margin-bottom:5px;&quot;><span class=&quot;qno&quot;>1</span><span>이 게시물이 '좋음'이라고 표현한 근거는 무엇인지 쓰고, 어떤 점이 독자에게 오해를 줄 수 있는지 설명해 보자.</span></div>
+      <div class=&quot;write-fixed mb20&quot;>풀이 공간</div>
+
+      <div class=&quot;q-label&quot; style=&quot;margin-bottom:5px;&quot;><span class=&quot;qno&quot;>2</span><span>같은 자료를 보고도 울산 시민이라면 '야외 활동 강추'라는 게시물에 어떻게 반응할지 쓰고, 더 적절한 대푯값은 무엇인지 말해 보자.</span></div>
+      <div class=&quot;write-fixed mb20&quot;>의견 공간</div>
+
+      <div class=&quot;q-last&quot;>
+        <div class=&quot;q-label&quot; style=&quot;margin-bottom:5px;&quot;><span class=&quot;qno&quot;>3</span><span>내가 이 게시물에 댓글을 단다면 어떤 내용을 쓸지, 대푯값을 근거로 써 보자.</span></div>
+        <div class=&quot;write-flex&quot;>의견 공간</div>
+      </div>
+
+    </div>
+  </div>
+  <div style=&quot;position:absolute;bottom:calc(14mm + 50mm + 4mm);right:20mm;width:30mm;text-align:center;&quot;>
+    <div style=&quot;display:inline-block;background:#7B4A2D;color:#fff;font-size:6pt;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;&quot;>🏁 도착 · 대푯값 여행</div>
+  </div>
+  <div class=&quot;math-img&quot;>
+    <span style=&quot;font-size:18pt;&quot;>🧭</span>
+    <div style=&quot;font-size:6pt;color:#7B4A2D;font-weight:700;line-height:1.6;margin-top:3px;&quot;>여행 가이드<br>캐릭터 자리</div>
+    <div style=&quot;font-size:5.5pt;color:#aaa;margin-top:2px;line-height:1.5;&quot;>미세먼지 지도를<br>들고 있는 캐릭터</div>
+    <div style=&quot;font-size:5pt;color:#ccc;margin-top:2px;&quot;>3cm × 5cm</div>
+  </div>
+  <div class=&quot;pg-center&quot;><div class=&quot;pg-badge&quot;>생각+</div></div>
+</div>
+
+<!-- ════ 시안 2 ════ -->
+<div class=&quot;draft-label&quot;>시안 2 — 같은 자료, 다른 주장</div>
+<div class=&quot;page&quot;>
+  <div class=&quot;ct-outer&quot;>
+    <div class=&quot;ct-header&quot;>
+      <span class=&quot;ct-title&quot;>생각 더하기</span>
+      <div class=&quot;ct-badge&quot;>💬 비판적으로 사고하기</div>
+    </div>
+    <div class=&quot;ct-body&quot;>
+
+      <div class=&quot;situation mb20&quot;>앞의 접지 자료에서 17개 시·도의 미세먼지 농도를 보고 서로 다른 입장의 사람들이 각각 다음과 같이 주장하였다.</div>
+
+      <div class=&quot;same-data-box mb20&quot;>
+        <div class=&quot;sd-label&quot;>📊 같은 자료 — 17개 시·도 미세먼지 농도 대푯값</div>
+        <div class=&quot;sd-values&quot;>
+          <div class=&quot;sd-val&quot; style=&quot;background:#ddeeff;color:#1a50a0;&quot;>평균 19 ㎍/㎥</div>
+          <div class=&quot;sd-val&quot; style=&quot;background:#d5eddc;color:#1a5c28;&quot;>중앙값 16 ㎍/㎥</div>
+          <div class=&quot;sd-val&quot; style=&quot;background:#f5ede0;color:#7B4A2D;&quot;>최빈값 16 ㎍/㎥</div>
+        </div>
+      </div>
+
+      <div class=&quot;vs-grid mb20&quot;>
+        <div class=&quot;vs-card vs-env&quot;>
+          <div class=&quot;vs-name&quot;><span style=&quot;font-size:12pt;&quot;>🏛</span><span style=&quot;color:#1a50a0;&quot;>환경부</span></div>
+          <div class=&quot;vs-body&quot;>평균 <b>19 ㎍/㎥</b>로 전반적으로 대기질이 양호합니다. 꾸준한 개선 정책의 성과입니다.</div>
+        </div>
+        <div class=&quot;vs-card vs-ngo&quot;>
+          <div class=&quot;vs-name&quot;><span style=&quot;font-size:12pt;&quot;>✊</span><span style=&quot;color:#e65100;&quot;>환경단체</span></div>
+          <div class=&quot;vs-body&quot;>중앙값·최빈값이 <b>16 ㎍/㎥</b>인데, 평균 19는 극단값에 왜곡된 수치입니다. 여전히 심각합니다.</div>
+        </div>
+        <div class=&quot;vs-card vs-tour&quot;>
+          <div class=&quot;vs-name&quot;><span style=&quot;font-size:12pt;&quot;>✈️</span><span style=&quot;color:#2e7d32;&quot;>관광청</span></div>
+          <div class=&quot;vs-body&quot;>전국 <b>11개 시·도</b>가 '좋음' 등급! 최빈값 기준으로 한국은 청정 여행지입니다.</div>
+        </div>
+        <div class=&quot;vs-card vs-citizen&quot;>
+          <div class=&quot;vs-name&quot;><span style=&quot;font-size:12pt;&quot;>😤</span><span style=&quot;color:#c00000;&quot;>울산 시민</span></div>
+          <div class=&quot;vs-body&quot;>우리 지역은 <b>33 ㎍/㎥</b>입니다. 전국 평균이 '좋음'이라도 저희는 '나쁨' 속에 살고 있어요.</div>
+        </div>
+      </div>
+
+      <div class=&quot;q-label&quot; style=&quot;margin-bottom:5px;&quot;><span class=&quot;qno&quot;>1</span><span>네 입장 중 같은 대푯값을 사용하면서도 서로 다른 결론을 내리는 경우를 찾고, 그 이유를 설명해 보자.</span></div>
+      <div class=&quot;write-fixed mb20&quot;>풀이 공간</div>
+
+      <div class=&quot;q-label&quot; style=&quot;margin-bottom:5px;&quot;><span class=&quot;qno&quot;>2</span><span>환경부와 환경단체가 같은 자료를 보고 다른 주장을 하는 이유는 무엇인지 대푯값과 연관 지어 써 보자.</span></div>
+      <div class=&quot;write-fixed mb20&quot;>의견 공간</div>
+
+      <div class=&quot;q-last&quot;>
+        <div class=&quot;q-label&quot; style=&quot;margin-bottom:5px;&quot;><span class=&quot;qno&quot;>3</span><span>내가 울산에 사는 학생이라면 어떤 대푯값을 근거로, 어떤 입장을 지지할지 이유와 함께 써 보자.</span></div>
+        <div class=&quot;write-flex&quot;>의견 공간</div>
+      </div>
+
+    </div>
+  </div>
+  <div style=&quot;position:absolute;bottom:calc(14mm + 50mm + 4mm);right:20mm;width:30mm;text-align:center;&quot;>
+    <div style=&quot;display:inline-block;background:#7B4A2D;color:#fff;font-size:6pt;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;&quot;>🏁 도착 · 대푯값 여행</div>
+  </div>
+  <div class=&quot;math-img&quot;>
+    <span style=&quot;font-size:18pt;&quot;>🧭</span>
+    <div style=&quot;font-size:6pt;color:#7B4A2D;font-weight:700;line-height:1.6;margin-top:3px;&quot;>여행 가이드<br>캐릭터 자리</div>
+    <div style=&quot;font-size:5.5pt;color:#aaa;margin-top:2px;line-height:1.5;&quot;>미세먼지 지도를<br>들고 있는 캐릭터</div>
+    <div style=&quot;font-size:5pt;color:#ccc;margin-top:2px;&quot;>3cm × 5cm</div>
+  </div>
+  <div class=&quot;pg-center&quot;><div class=&quot;pg-badge&quot;>생각+</div></div>
+</div>
+" loading="eager" scrolling="no"></iframe>
+            </div>
+          </div>
+          <div class="page-card">
+            <div class="page-num-chip after-chip">5</div>
+            <div class="page-frame-wrap">
+              <iframe class="page-frame" srcdoc="<!DOCTYPE html>
+<html lang=&quot;ko&quot;>
+<head>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>배운 내용 확인하기</title>
+<link href=&quot;https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap&quot; rel=&quot;stylesheet&quot;>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    background: #D8D8D8;
+    display: flex;
+    justify-content: center;
+    padding: 30px 0 60px;
+  }
+
+  /* ── A4 페이지 ── */
+  .page {
+    width: 794px;
+    min-height: 1123px;
+    background: #fff;
+    box-shadow: 0 4px 32px rgba(0,0,0,.18);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── 헤드 상단 강조선 ── */
+  .head-top {
+    height: 6px;
+    background: linear-gradient(90deg, #1DAB7A 0%, #3ECFA3 60%, #7EDFC4 100%);
+    flex-shrink: 0;
+  }
+
+  /* ── 헤드 배너 ── */
+  .head-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    background: #F0FAF6;
+    border-bottom: 1.5px solid #A8E3CC;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .head-body::before {
+    content: '';
+    position: absolute;
+    right: 120px; top: -22px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: #C8F0E2;
+    opacity: .55;
+  }
+  .head-body::after {
+    content: '';
+    position: absolute;
+    right: 68px; top: 8px;
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: #A4E6D0;
+    opacity: .4;
+  }
+  .head-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative; z-index: 1;
+  }
+  .head-icon {
+    width: 44px; height: 44px;
+    background: #1DAB7A;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .head-icon svg { width: 24px; height: 24px; }
+  .head-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #0F7A55;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .head-title {
+    font-size: 21px;
+    font-weight: 900;
+    color: #0A4D35;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+  }
+  .head-right { position: relative; z-index: 1; }
+  .qr-box {
+    width: 52px; height: 52px;
+    background: #fff;
+    border: 1.5px solid #A8E3CC;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qr-box svg { width: 36px; height: 36px; }
+
+  /* ── 2단 본문 ── */
+  .content {
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    flex: 1;
+    padding-bottom: 113px;
+  }
+  .col {
+    padding: 20px 22px 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .divider {
+    background: #CFCFCF;
+  }
+
+  /* ── 문제 블록 ── */
+  .problem {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* 문제 번호 + 본문 첫 줄 */
+  .p-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .pnum {
+    width: 22px; height: 22px;
+    background: #1DAB7A;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .ptext {
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: #1A1A1A;
+  }
+  .ptext strong { color: #0F7A55; }
+
+  /* 수치 데이터 박스 */
+  .data-wrap {
+    padding-left: 30px;
+  }
+  .data-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    border: 1.5px solid #BDBDBD;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1A1A1A;
+    background: #FAFAFA;
+    margin-bottom: 3px;
+    width: fit-content;
+  }
+  .data-box span { min-width: 22px; text-align: center; }
+  .data-unit {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    text-align: right;
+    margin-bottom: 4px;
+  }
+
+  /* 데이터 + 삽화 나란히 (2번, 4번) */
+  .data-illust-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-left: 30px;
+  }
+  .data-illust-row .data-wrap {
+    padding-left: 0;
+    flex: 1;
+    min-width: 0;
+  }
+  .data-illust-row .data-box {
+    width: 100%;
+  }
+  .illust-box {
+    width: 110px;
+    min-height: 110px;
+    flex-shrink: 0;
+    border: 1.5px dashed #A8E3CC;
+    border-radius: 8px;
+    background: #F0FAF6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .illust-box svg { width: 24px; height: 24px; opacity: .45; }
+  .illust-box span {
+    font-size: 10px;
+    color: #7DC4A8;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* 표 */
+  .tbl-wrap { padding-left: 30px; }
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+  }
+  .dtable th {
+    background: #E8F7F1;
+    border: 1px solid #BDBDBD;
+    padding: 5px 6px;
+    font-weight: 700;
+    text-align: center;
+    color: #0A4D35;
+  }
+  .dtable td {
+    border: 1px solid #BDBDBD;
+    padding: 5px 6px;
+    text-align: center;
+    color: #333;
+  }
+  .dtable td:first-child {
+    background: #F5F5F5;
+    font-weight: 500;
+  }
+
+  /* 문제 구분선 */
+
+  /* 풀이·답 영역 */
+  .answer-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+    padding-left: 30px;
+  }
+  .answer-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .answer-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0F7A55;
+    flex-shrink: 0;
+    width: 28px;
+  }
+  .answer-line {
+    flex: 1;
+    border-bottom: 1px solid #BDBDBD;
+    height: 22px;
+  }
+  .answer-line-tall {
+    flex: 1;
+    border: 1px solid #BDBDBD;
+    border-radius: 4px;
+    height: 52px;
+  }
+
+  /* 역량 태그 */
+  .tags {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 6px;
+  }
+  .tag {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: .3px;
+  }
+  .tag-green  { background: #E1F5EE; color: #0F6E56; }
+  .tag-blue   { background: #E6F1FB; color: #185FA5; }
+  .tag-amber  { background: #FAEEDA; color: #854F0B; }
+  .tag-coral  { background: #FAECE7; color: #993C1D; }
+  .tag-serial {
+    background: #fff;
+    color: #993C1D;
+    border: 1.5px solid #993C1D;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    letter-spacing: .5px;
+  }
+
+  /* 이탤릭 변수 */
+  .var { font-style: italic; font-weight: 700; color: #1DAB7A; }
+</style>
+</head>
+<body>
+<div class=&quot;page&quot;>
+
+  <!-- 헤드 -->
+  <div class=&quot;head-top&quot;></div>
+  <div class=&quot;head-body&quot;>
+    <div class=&quot;head-left&quot;>
+      <div class=&quot;head-icon&quot;>
+        <svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;>
+          <rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;3&quot; stroke=&quot;#fff&quot; stroke-width=&quot;1.8&quot;/>
+          <path d=&quot;M7 9l2.5 2.5L13 8&quot; stroke=&quot;#fff&quot; stroke-width=&quot;1.8&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;/>
+          <line x1=&quot;16&quot; y1=&quot;8.5&quot; x2=&quot;18&quot; y2=&quot;8.5&quot; stroke=&quot;#fff&quot; stroke-width=&quot;1.5&quot; stroke-linecap=&quot;round&quot;/>
+          <path d=&quot;M7 14l2.5 2.5L13 13&quot; stroke=&quot;#A4E6D0&quot; stroke-width=&quot;1.8&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; opacity=&quot;.6&quot;/>
+          <line x1=&quot;16&quot; y1=&quot;13.5&quot; x2=&quot;18&quot; y2=&quot;13.5&quot; stroke=&quot;#A4E6D0&quot; stroke-width=&quot;1.5&quot; stroke-linecap=&quot;round&quot; opacity=&quot;.6&quot;/>
+        </svg>
+      </div>
+      <div>
+        <div class=&quot;head-label&quot;>확인 학습</div>
+        <div class=&quot;head-title&quot;>배운 내용 확인하기</div>
+      </div>
+    </div>
+    <div class=&quot;head-right&quot;>
+      <div class=&quot;qr-box&quot;>
+        <svg viewBox=&quot;0 0 36 36&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;>
+          <rect x=&quot;2&quot; y=&quot;2&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1.8&quot;/>
+          <rect x=&quot;5&quot; y=&quot;5&quot; width=&quot;7&quot; height=&quot;7&quot; fill=&quot;#1DAB7A&quot; rx=&quot;1&quot;/>
+          <rect x=&quot;21&quot; y=&quot;2&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1.8&quot;/>
+          <rect x=&quot;24&quot; y=&quot;5&quot; width=&quot;7&quot; height=&quot;7&quot; fill=&quot;#1DAB7A&quot; rx=&quot;1&quot;/>
+          <rect x=&quot;2&quot; y=&quot;21&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1.8&quot;/>
+          <rect x=&quot;5&quot; y=&quot;24&quot; width=&quot;7&quot; height=&quot;7&quot; fill=&quot;#1DAB7A&quot; rx=&quot;1&quot;/>
+          <rect x=&quot;21&quot; y=&quot;21&quot; width=&quot;4&quot; height=&quot;4&quot; fill=&quot;#1DAB7A&quot; rx=&quot;0.5&quot;/>
+          <rect x=&quot;27&quot; y=&quot;21&quot; width=&quot;4&quot; height=&quot;4&quot; fill=&quot;#1DAB7A&quot; rx=&quot;0.5&quot;/>
+          <rect x=&quot;21&quot; y=&quot;27&quot; width=&quot;4&quot; height=&quot;4&quot; fill=&quot;#1DAB7A&quot; rx=&quot;0.5&quot;/>
+          <rect x=&quot;27&quot; y=&quot;27&quot; width=&quot;4&quot; height=&quot;4&quot; fill=&quot;#1DAB7A&quot; rx=&quot;0.5&quot;/>
+          <rect x=&quot;24&quot; y=&quot;24&quot; width=&quot;2&quot; height=&quot;2&quot; fill=&quot;#1DAB7A&quot;/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2단 문제 본문 -->
+  <div class=&quot;content&quot;>
+
+    <!-- 왼쪽 열: 문제 1·2·3 -->
+    <div class=&quot;col&quot;>
+
+      <!-- 문제 1 -->
+      <div class=&quot;problem&quot;>
+        <div class=&quot;p-head&quot;>
+          <div class=&quot;pnum&quot;>1</div>
+          <div class=&quot;ptext&quot;>
+            다음은 어느 날 6시간 동안 놀이공원 회전목마를 탄 사람 수를 조사하여 나타낸 것이다.<br>
+            한 시간 동안 회전목마를 탄 사람 수의 <strong>평균</strong>을 구하시오.
+          </div>
+        </div>
+        <div class=&quot;data-wrap&quot;>
+          <span class=&quot;data-unit&quot;>(단위: 명)</span>
+          <div class=&quot;data-box&quot; style=&quot;width:100%; justify-content:space-around;&quot;>
+            <span>18</span><span>24</span><span>21</span><span>27</span><span>15</span><span>21</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- 문제 2 -->
+      <div class=&quot;problem&quot;>
+        <div class=&quot;tags&quot;><span class=&quot;tag tag-green&quot;>추론</span></div>
+        <div class=&quot;p-head&quot; style=&quot;align-items:flex-start;&quot;>
+          <div class=&quot;pnum&quot;>2</div>
+          <div class=&quot;ptext&quot; style=&quot;flex:1;&quot;>
+            다음은 운동장에 심어 놓은 해바라기 7개의 키를 조사하여 나타낸 것이다.<br>
+            이 자료의 <strong>중앙값</strong>을 구하시오.
+          </div>
+          <div class=&quot;illust-box&quot; style=&quot;margin-left:10px;&quot;>
+            <svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;>
+              <rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;2&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1.5&quot;/>
+              <line x1=&quot;3&quot; y1=&quot;9&quot; x2=&quot;21&quot; y2=&quot;9&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+              <line x1=&quot;3&quot; y1=&quot;15&quot; x2=&quot;21&quot; y2=&quot;15&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+              <line x1=&quot;9&quot; y1=&quot;3&quot; x2=&quot;9&quot; y2=&quot;21&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+              <line x1=&quot;15&quot; y1=&quot;3&quot; x2=&quot;15&quot; y2=&quot;21&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+            </svg>
+            <span>해바라기<br>3~5송이</span>
+          </div>
+        </div>
+        <div class=&quot;data-wrap&quot;>
+          <span class=&quot;data-unit&quot;>(단위: cm)</span>
+          <div class=&quot;data-box&quot; style=&quot;width:100%; justify-content:space-around;&quot;>
+            <span>145</span><span>152</span><span>148</span><span>150</span><span>147</span><span>155</span><span>149</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- 문제 3 -->
+      <div class=&quot;problem&quot;>
+        <div class=&quot;tags&quot;><span class=&quot;tag tag-green&quot;>추론</span><span class=&quot;tag tag-blue&quot;>의사소통</span></div>
+        <div class=&quot;p-head&quot;>
+          <div class=&quot;pnum&quot;>3</div>
+          <div class=&quot;ptext&quot;>
+            표는 어느 반 학생들이 체험 학습에서 가장 재미있었다고 답한 활동을 조사하여 나타낸 것이다.<br>
+            이 자료의 <strong>대표값</strong>으로 가장 적절한 것을 말하고, 그 까닭을 쓰시오.
+          </div>
+        </div>
+        <div class=&quot;tbl-wrap&quot;>
+          <table class=&quot;dtable&quot;>
+            <thead>
+              <tr>
+                <th>활동</th>
+                <th>도예 체험</th>
+                <th>곤충 관찰</th>
+                <th>요리 체험</th>
+                <th>전통놀이</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>학생 수(명)</td>
+                <td>7</td><td>5</td><td>11</td><td>4</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class=&quot;illust-box&quot; style=&quot;width:100%; flex-direction:row; gap:8px; height:60px;&quot;>
+          <svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot; style=&quot;width:20px; height:20px; opacity:.45; flex-shrink:0;&quot;>
+            <rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;2&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1.5&quot;/>
+            <line x1=&quot;3&quot; y1=&quot;9&quot; x2=&quot;21&quot; y2=&quot;9&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+            <line x1=&quot;3&quot; y1=&quot;15&quot; x2=&quot;21&quot; y2=&quot;15&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+            <line x1=&quot;9&quot; y1=&quot;3&quot; x2=&quot;9&quot; y2=&quot;21&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+            <line x1=&quot;15&quot; y1=&quot;3&quot; x2=&quot;15&quot; y2=&quot;21&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+          </svg>
+          <span style=&quot;font-size:11px;&quot;>표 꾸밀 작은 이미지 추가?</span>
+        </div>
+      </div>
+
+    </div><!-- /왼쪽 -->
+
+    <!-- 가운데 구분선 -->
+    <div class=&quot;divider&quot;></div>
+
+    <!-- 오른쪽 열: 문제 4·5·6 -->
+    <div class=&quot;col&quot;>
+
+      <!-- 문제 4 -->
+      <div class=&quot;problem&quot;>
+        <div class=&quot;tags&quot;><span class=&quot;tag tag-coral&quot;>문제해결</span></div>
+        <div class=&quot;p-head&quot; style=&quot;align-items:flex-start;&quot;>
+          <div class=&quot;pnum&quot;>4</div>
+          <div class=&quot;ptext&quot; style=&quot;flex:1;&quot;>
+            다음은 어느 모둠 학생 7명이 던지기 놀이를 하여 얻은 점수를 조사하여 나타낸 것이다.<br>
+            이 자료의 <strong>평균</strong>이 8점이고 <strong>중앙값</strong>이 8점일 때, <span class=&quot;var&quot;>x</span>의 값을 구하시오.
+          </div>
+          <div class=&quot;illust-box&quot; style=&quot;margin-left:10px;&quot;>
+            <svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;>
+              <rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;2&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1.5&quot;/>
+              <line x1=&quot;3&quot; y1=&quot;9&quot; x2=&quot;21&quot; y2=&quot;9&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+              <line x1=&quot;3&quot; y1=&quot;15&quot; x2=&quot;21&quot; y2=&quot;15&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+              <line x1=&quot;9&quot; y1=&quot;3&quot; x2=&quot;9&quot; y2=&quot;21&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+              <line x1=&quot;15&quot; y1=&quot;3&quot; x2=&quot;15&quot; y2=&quot;21&quot; stroke=&quot;#1DAB7A&quot; stroke-width=&quot;1&quot;/>
+            </svg>
+            <span>과녁판<br>이미지</span>
+          </div>
+        </div>
+        <div class=&quot;data-wrap&quot;>
+          <span class=&quot;data-unit&quot;>(단위: 점)</span>
+          <div class=&quot;data-box&quot; style=&quot;width:100%; justify-content:space-around;&quot;>
+            <span>5</span><span>7</span><span><span class=&quot;var&quot;>x</span></span><span>8</span><span>8</span><span>10</span><span>11</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- 문제 5 -->
+      <div class=&quot;problem&quot;>
+        <div class=&quot;p-head&quot;>
+          <div class=&quot;pnum&quot;>5</div>
+          <div class=&quot;ptext&quot;>
+            표는 학교 축제에서 학생들이 고른 간식의 종류를 조사하여 나타낸 것이다.<br>
+            이 자료의 <strong>최빈값</strong>을 구하시오.
+          </div>
+        </div>
+        <div class=&quot;tbl-wrap&quot;>
+          <table class=&quot;dtable&quot;>
+            <thead>
+              <tr>
+                <th>간식</th>
+                <th>김밥</th>
+                <th>떡볶이</th>
+                <th>어묵</th>
+                <th>샌드위치</th>
+                <th>주먹밥</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>학생 수(명)</td>
+                <td>6</td><td>9</td><td>4</td><td>9</td><td>2</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+      <!-- 문제 6 -->
+      <div class=&quot;problem&quot;>
+        <div class=&quot;tags&quot;><span class=&quot;tag tag-serial&quot;>서술형</span></div>
+        <div class=&quot;p-head&quot;>
+          <div class=&quot;pnum&quot;>6</div>
+          <div class=&quot;ptext&quot;>
+            다음은 어느 반 학생 9명이 하루 동안 사용한 휴대용 선풍기의 사용 시간을 조사하여 나타낸 것이다.<br>
+            <strong>평균, 중앙값, 최빈값</strong> 중에서 이 자료의 대표값으로 가장 적절한 것을 하나 고르고, 그 값을 구한 뒤 그 이유를 쓰시오.
+          </div>
+        </div>
+        <div class=&quot;data-wrap&quot;>
+          <span class=&quot;data-unit&quot;>(단위: 분)</span>
+          <div class=&quot;data-box&quot; style=&quot;width:100%; justify-content:space-around; flex-wrap:wrap; row-gap:6px;&quot;>
+            <span>12</span><span>15</span><span>15</span><span>18</span><span>18</span>
+            <div style=&quot;width:100%; display:flex; justify-content:space-around;&quot;>
+              <span>19</span><span>20</span><span>21</span><span>65</span>
+            </div>
+          </div>
+        </div>
+        <div class=&quot;answer-section&quot;>
+          <div class=&quot;answer-row&quot;>
+            <span class=&quot;answer-label&quot;>풀이</span>
+            <div class=&quot;answer-line-tall&quot;></div>
+          </div>
+          <div class=&quot;answer-row&quot;>
+            <span class=&quot;answer-label&quot;>답</span>
+            <div class=&quot;answer-line&quot;></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /오른쪽 -->
+
+  </div><!-- /content -->
+
+</div><!-- /page -->
+</body>
+</html>
+" loading="eager" scrolling="no"></iframe>
+            </div>
+          </div>
+      </div>
+    </section>
+    <button class="scroll-arrow left" onclick="scrollAfterRow(-460)" aria-label="왼쪽 스크롤">◀</button>
+    <button class="scroll-arrow right" onclick="scrollAfterRow(460)" aria-label="오른쪽 스크롤">▶</button>
+  </main>
+
+  <p class="footer-note">© 비교 자료 · 페이지 위에 마우스를 올리면 강조됩니다.</p>
+
+<script>
+  /* ============================================================
+     PAGE FLIP transition (BEFORE → AFTER only) + paper sound
+     ============================================================ */
+
+  /* --- Web Audio synthesized paper-flip sound --- */
+  let _audioCtx = null;
+  function getAudioCtx(){
+    if (!_audioCtx) {
+      try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e){ _audioCtx = null; }
+    }
+    if (_audioCtx && _audioCtx.state === 'suspended') {
+      _audioCtx.resume();
+    }
+    return _audioCtx;
+  }
+
+  function playPaperFlip(){
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const duration = 0.55;
+
+    /* Generate noise buffer with bell-curve amplitude shaping */
+    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / data.length;
+      const env = Math.sin(Math.PI * t);            // bell-curve
+      data[i] = (Math.random() * 2 - 1) * (0.4 + env * 0.6);
+    }
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+
+    /* Bandpass filter, sweeping upward = "swoosh paper" feel */
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(1800, now);
+    bp.frequency.exponentialRampToValueAtTime(4800, now + 0.30);
+    bp.Q.value = 1.4;
+
+    /* Highpass to remove low rumble */
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 1200;
+
+    /* Amplitude envelope */
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.45, now + 0.02);
+    gain.gain.linearRampToValueAtTime(0.30, now + 0.18);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.50);
+
+    noise.connect(bp);
+    bp.connect(hp);
+    hp.connect(gain);
+    gain.connect(ctx.destination);
+
+    noise.start(now);
+    noise.stop(now + duration);
+  }
+
+  /* --- BEFORE → AFTER : flip + sound --- */
+  function goToAfter(){
+    const before = document.getElementById('screen-before');
+    const after  = document.getElementById('screen-after');
+    if (!before.classList.contains('active')) return;
+
+    /* play sound right when click happens */
+    playPaperFlip();
+
+    /* Phase 1: BEFORE rotates 0 → -90 (edge-on, invisible) over 0.4s */
+    before.classList.add('flipping-out');
+
+    setTimeout(() => {
+      /* swap visibility at midpoint */
+      before.classList.remove('active', 'flipping-out');
+      before.style.display = 'none';
+      /* reset BEFORE transform for next time */
+      before.style.transform = '';
+
+      /* AFTER set up at +90deg (edge-on), then rotates to 0 */
+      after.style.display = 'block';
+      after.classList.add('active', 'flipping-in-init');
+      void after.offsetHeight;                     /* reflow */
+      after.classList.remove('flipping-in-init');
+      after.classList.add('flipping-in');
+
+      window.scrollTo({top:0, behavior:'smooth'});
+
+      /* cleanup classes after second half completes */
+      setTimeout(() => {
+        after.classList.remove('flipping-in');
+        after.style.transform = '';
+      }, 450);
+    }, 400);
+  }
+
+  /* --- AFTER → BEFORE : simple fade (no flip, no sound, per spec) --- */
+  function goToBefore(){
+    const before = document.getElementById('screen-before');
+    const after  = document.getElementById('screen-after');
+    if (!after.classList.contains('active')) return;
+
+    after.style.opacity = '0';
+    setTimeout(() => {
+      after.classList.remove('active');
+      after.style.display = 'none';
+      after.style.opacity = '';
+
+      before.style.display = 'block';
+      before.style.opacity = '0';
+      void before.offsetHeight;
+      before.classList.add('active');
+      before.style.opacity = '1';
+
+      window.scrollTo({top:0, behavior:'smooth'});
+    }, 300);
+  }
+
+  function scrollAfterRow(delta){
+    const row = document.getElementById('after-pages-row');
+    if (row) row.scrollBy({left: delta, behavior: 'smooth'});
+  }
+
+  document.addEventListener('keydown', (e) => {
+    const afterActive = document.getElementById('screen-after').classList.contains('active');
+    if (!afterActive) return;
+    if (e.key === 'ArrowLeft') scrollAfterRow(-460);
+    else if (e.key === 'ArrowRight') scrollAfterRow(460);
+    else if (e.key === 'Escape') goToBefore();
+  });
+</script>
+</body>
+</html>
